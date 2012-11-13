@@ -13,7 +13,7 @@ static QString AMAZON_S3_ACCESS_KEY  = "";
 static QString AMAZON_S3_SECRET_KEY  = "";
 static QString AMAZON_S3_BUCKET_NAME = "";
 
-int main(char **argv, int argc)
+int main(int argc, char **argv)
 {
     QCoreApplication app(argc, argv);
     QS3Tester tester;
@@ -31,7 +31,7 @@ QS3Tester::QS3Tester()
     client = new QS3Client(QS3Config(AMAZON_S3_ACCESS_KEY, AMAZON_S3_SECRET_KEY, AMAZON_S3_BUCKET_NAME), this);
 
     // List object
-    QS3ListObjectsResponse *response = client->listObjects("/", "avatars", "", 25);
+    QS3ListObjectsResponse *response = client->listObjects("/", "somedirpath", "", 25);
     connect(response, SIGNAL(finished(QS3ListObjectsResponse*)), SLOT(OnListObjectsRespose(QS3ListObjectsResponse*)));
 }
 
