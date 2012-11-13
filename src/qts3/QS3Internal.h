@@ -9,6 +9,11 @@
 
 namespace QS3Helpers
 {
+    bool QueryItemCompare(const QS3QueryPair &q1, const QS3QueryPair &q2)
+    {
+        return (q1.first.compare(q2.first) < 0);
+    }
+    
     static QString newline = "\n";
     static QHash<uint, QString> months;
     static QHash<uint, QString> days;

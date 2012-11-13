@@ -9,6 +9,7 @@ class QS3Object;
 class QS3Response;
 class QS3GetObjectResponse;
 class QS3ListObjectsResponse;
+class QS3AclResponse;
 
 QT_BEGIN_NAMESPACE
 class QNetworkAccessManager;
