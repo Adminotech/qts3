@@ -200,6 +200,18 @@ void QS3RemoveObjectResponse::emitFinished()
     emit finished(this);
 }
 
+// QS3CopyObjectResponse
+
+QS3CopyObjectResponse::QS3CopyObjectResponse(const QUrl &url) :
+    QS3Response(url, QS3::CopyObject)
+{
+}
+
+void QS3CopyObjectResponse::emitFinished()
+{
+    emit finished(this);
+}
+
 // QS3GetObjectResponse
 
 QS3GetObjectResponse::QS3GetObjectResponse(const QUrl &url) :

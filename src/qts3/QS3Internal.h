@@ -17,17 +17,16 @@ namespace QS3
     static QHash<uint, QString> MONTHS;
     static QHash<uint, QString> DAYS;
 
-    static QByteArray AMAZON_HEADER_PREFIX = "x-amz-";
-    static QByteArray AMAZON_HEADER_ACL = "x-amz-acl";
-    static QByteArray STANDARD_HEADER_AUTHORIZATION = "Authorization";
-    static QByteArray STANDARD_HEADER_DATE = "Date";
+    static QByteArray AMAZON_HEADER_PREFIX              = "x-amz-";
+    static QByteArray AMAZON_HEADER_ACL                 = "x-amz-acl";
+    static QByteArray AMAZON_HEADER_COPY_SOURCE         = "x-amz-copy-source";
+    static QByteArray STANDARD_HEADER_AUTHORIZATION     = "Authorization";
+    static QByteArray STANDARD_HEADER_DATE              = "Date";
 
     static void initStaticData()
     {
         AMAZON_QUERY_KEYS.clear();
-        AMAZON_QUERY_KEYS << "versioning" << "location" 
-                          << "acl" << "torrent" 
-                          << "lifecycle" << "versionid";
+        AMAZON_QUERY_KEYS << "versioning" << "location" << "acl" << "torrent" << "lifecycle" << "versionid";
 
         MONTHS.clear();
         MONTHS[1] = "Jan";

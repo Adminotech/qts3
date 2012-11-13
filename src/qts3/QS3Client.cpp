@@ -96,11 +96,69 @@ QS3RemoveObjectResponse *QS3Client::remove(const QString &key)
     return response;
 }
 
+QS3CopyObjectResponse *QS3Client::copy(const QString &sourceKey, const QString &destinationKey, QS3::CannedAcl cannedAcl)
+{
+    return copy(config_.bucket, sourceKey, destinationKey, cannedAcl);
+}
+
+QS3CopyObjectResponse *QS3Client::copy(const QString &sourceBucket, const QString &sourceKey, const QString &destinationKey, QS3::CannedAcl cannedAcl)
+{
+    if (sourceKey.trimmed().isEmpty() || sourceKey.trimmed() == QS3::ROOT_PATH)
+    {
+        qDebug() << "QS3Client::copy() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+    if (destinationKey.trimmed().isEmpty() || destinationKey.trimmed() == QS3::ROOT_PATH)
+    {
+        qDebug() << "QS3Client::copy() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+    if (sourceKey.trimmed().endsWith("/") || destinationKey.trimmed().endsWith("/"))
+    {
+        qDebug() << "QS3Client::copy() Error: Key cannot end with \"/\". Cannot copy folders.";
+        return 0;
+    }
+
+    QByteArray aclHeader = "";
+    if (cannedAcl != QS3::NoCannedAcl)
+    {
+        aclHeader = QS3::cannedAclToHeader(cannedAcl);
+        if (aclHeader.isEmpty())
+            qDebug() << "QS3Client::copy() Warning: Input QS3::CannedAcl is invalid:" << cannedAcl;
+    }
+
+    QString source = sourceBucket;
+    if (!source.startsWith(QS3::ROOT_PATH))
+        source = QS3::ROOT_PATH + source;
+    if (!source.endsWith(QS3::ROOT_PATH) && !sourceKey.startsWith(QS3::ROOT_PATH))
+        source = source + QS3::ROOT_PATH;
+    source += sourceKey;
+
+    // Setup headers
+    QNetworkRequest request(generateUrl(destinationKey));
+    if (!aclHeader.isEmpty())
+        request.setRawHeader(QS3::AMAZON_HEADER_ACL, aclHeader);
+    request.setRawHeader(QS3::AMAZON_HEADER_COPY_SOURCE, source.toUtf8());
+
+    prepareRequest(&request, "PUT");
+    QNetworkReply *reply = network_->put(request, "");
+
+    QS3CopyObjectResponse *response = new QS3CopyObjectResponse(request.url());
+    requests_[reply] = response;
+
+    return response;
+}
+
 QS3GetObjectResponse *QS3Client::get(const QString &key)
 {
     if (key.trimmed().isEmpty() || key.trimmed() == QS3::ROOT_PATH)
     {
         qDebug() << "QS3Client::get() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+    if (key.trimmed().endsWith("/"))
+    {
+        qDebug() << "QS3Client::get() Error: Key cannot end with \"/\". Cannot get folders.";
         return 0;
     }
 
@@ -121,7 +179,12 @@ QS3PutObjectResponse *QS3Client::put(const QString &key, QFile *file, const QS3F
         qDebug() << "QS3Client::put() Error: Cannot be called with empty or \"/\" key.";
         return 0;
     }
-    
+    if (key.trimmed().endsWith("/"))
+    {
+        qDebug() << "QS3Client::put() Error: Key cannot end with \"/\". Cannot put folders.";
+        return 0;
+    }
+
     if (!file)
     {
         qDebug() << "QS3Client::put() Error: Input QFile is null.";
@@ -148,6 +211,11 @@ QS3PutObjectResponse *QS3Client::put(const QString &key, const QByteArray &data,
     if (key.trimmed().isEmpty() || key.trimmed() == QS3::ROOT_PATH)
     {
         qDebug() << "QS3Client::put() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+    if (key.trimmed().endsWith("/"))
+    {
+        qDebug() << "QS3Client::put() Error: Key cannot end with \"/\". Cannot put folders.";
         return 0;
     }
     if (data.isEmpty())
@@ -288,6 +356,15 @@ void QS3Client::onReply(QNetworkReply *reply)
         case QS3::RemoveObject:
         {
             QS3RemoveObjectResponse *response = qobject_cast<QS3RemoveObjectResponse*>(responseBase);
+            if (response)
+                emit finished(response);
+            else
+                castError = true;
+            break;
+        }
+        case QS3::CopyObject:
+        {
+            QS3CopyObjectResponse *response = qobject_cast<QS3CopyObjectResponse*>(responseBase);
             if (response)
                 emit finished(response);
             else

@@ -9,6 +9,7 @@ class QS3Object;
 class QS3Response;
 class QS3ListObjectsResponse;
 class QS3RemoveObjectResponse;
+class QS3CopyObjectResponse;
 class QS3GetObjectResponse;
 class QS3PutObjectResponse;
 class QS3GetAclResponse;

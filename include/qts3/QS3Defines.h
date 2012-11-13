@@ -19,6 +19,7 @@ namespace QS3
     {
         ListObjects = 0,
         RemoveObject,
+        CopyObject,
         GetObject,
         PutObject,
         GetAcl,
@@ -187,6 +188,25 @@ signals:
     /** This signal will fire if the request succeeded and
         if it fails. Check succeeded and error members for the status. */
     void finished(QS3RemoveObjectResponse *response);
+
+protected:
+    void emitFinished();
+};
+
+// QS3CopyObjectResponse
+
+class QTS3SHARED_EXPORT QS3CopyObjectResponse : public QS3Response
+{
+Q_OBJECT
+
+public:
+    QS3CopyObjectResponse(const QUrl &url);
+
+signals:
+    /// Request response finished.
+    /** This signal will fire if the request succeeded and
+        if it fails. Check succeeded and error members for the status. */
+    void finished(QS3CopyObjectResponse *response);
 
 protected:
     void emitFinished();

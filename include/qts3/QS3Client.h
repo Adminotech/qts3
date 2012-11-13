@@ -47,7 +47,22 @@ public slots:
         @note If the target is a folder it needs to be empty for it to be removed.
         @todo Automate the above so each file is removed from the folder automatically. */
     QS3RemoveObjectResponse *remove(const QString &key);
-    
+
+    /// Copy object with keys within the same bucket.
+    /** @param QString source key. This object will be copied. Do not include source bucket in the key.
+        @param QString target key. This is where the object will be copied to. Do not include target bucket in the key.
+        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default QS3::BucketOwnerFullControl is used.
+        @return QS3CopyObjectResponse response object. */
+    QS3CopyObjectResponse *copy(const QString &sourceKey, const QString &destinationKey, QS3::CannedAcl cannedAcl = QS3::BucketOwnerFullControl);
+
+    /// Copy object with keys from bucket to another.
+    /** @param QString source bucket name. The source key must be in this bucket.
+        @param QString source key. This object will be copied. Do not include source bucket in the key.
+        @param QString target key. This is where the object will be copied to. Do not include target bucket in the key.
+        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default QS3::BucketOwnerFullControl is used.
+        @return QS3CopyObjectResponse response object. */
+    QS3CopyObjectResponse *copy(const QString &sourceBucket, const QString &sourceKey, const QString &destinationKey, QS3::CannedAcl cannedAcl = QS3::BucketOwnerFullControl);
+
     /// Get object with key.
     /** @param QString key aka path in the bucket.
         @return QS3GetObjectResponse response object. */
@@ -57,7 +72,7 @@ public slots:
     /** @param QString key to upload.
         @param QFile file to upload.
         @param QS3FileMetadata File metadata.
-        @param QS3::CannedAcl Applied canned acl to uploaded file. By default no acl is used.
+        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default no ACL is used.
         @note Returned response can be null if invalid input params were given. */
     QS3PutObjectResponse *put(const QString &key, QFile *file, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl = QS3::NoCannedAcl);
     
@@ -65,7 +80,7 @@ public slots:
     /** @param QString key to upload.
         @param QByteArray data to upload.
         @param QS3FileMetadata Metadata.
-        @param QS3::CannedAcl Applied canned acl to uploaded file. By default no acl is used.
+        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default no ACL is used.
         @note Returned response can be null if invalid input params were given. */
     QS3PutObjectResponse *put(const QString &key, const QByteArray &data, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl = QS3::NoCannedAcl);
     
@@ -99,6 +114,10 @@ signals:
     /// QS3RemoveObjectResponse has finished.
     /** @note Do not store the emitted pointer. It will be automatically destroyed. */
     void finished(QS3RemoveObjectResponse *response);
+
+    /// QS3CopyObjectResponse has finished.
+    /** @note Do not store the emitted pointer. It will be automatically destroyed. */
+    void finished(QS3CopyObjectResponse *response);
     
     /// QS3GetObjectResponse has finished.
     /** @note Do not store the emitted pointer. It will be automatically destroyed. */

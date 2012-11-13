@@ -18,6 +18,7 @@ QS3Tester::QS3Tester(const QStringList &params)
     client = new QS3Client(QS3Config(params[0], params[1], params[2]), this);
     connect(client, SIGNAL(finished(QS3ListObjectsResponse*)), SLOT(OnListObjectsRespose(QS3ListObjectsResponse*)));
     connect(client, SIGNAL(finished(QS3RemoveObjectResponse*)), SLOT(OnRemoveObjectRespose(QS3RemoveObjectResponse*)));
+    connect(client, SIGNAL(finished(QS3CopyObjectResponse*)), SLOT(OnCopyObjectRespose(QS3CopyObjectResponse*)));
     connect(client, SIGNAL(finished(QS3GetObjectResponse*)), SLOT(OnGetObjectRespose(QS3GetObjectResponse*)));
     connect(client, SIGNAL(finished(QS3PutObjectResponse*)), SLOT(OnPutObjectRespose(QS3PutObjectResponse*)));
     connect(client, SIGNAL(finished(QS3GetAclResponse*)), SLOT(OnAclGetRespose(QS3GetAclResponse*)));
@@ -30,6 +31,10 @@ QS3Tester::QS3Tester(const QStringList &params)
      
     // Get object
     //client->get("avatars/aaaa.testfile");
+
+    // Copy object
+    //client->copy("avatars/aaaa.testfile", "avatars/aaaa.testfile.copied");
+    //client->copy("adminotech.data", "assets/test.zip", "avatars/test.zip", QS3::PublicRead);
     
     // Get and set acl
     //client->getAcl("avatars/aaaa.testfile");
@@ -83,6 +88,14 @@ void QS3Tester::OnListObjectsRespose(QS3ListObjectsResponse *response)
 void QS3Tester::OnRemoveObjectRespose(QS3RemoveObjectResponse *response)
 {
     qDebug() << "[QS3Tester]: DELETE completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
+    qDebug() << "[QS3Tester]: Succeeded :" << response->succeeded;
+    if (!response->succeeded)
+        qDebug() << "[QS3Tester]: Error     :" << response->error;
+}
+
+void QS3Tester::OnCopyObjectRespose(QS3CopyObjectResponse *response)
+{
+    qDebug() << "[QS3Tester]: COPY completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
     qDebug() << "[QS3Tester]: Succeeded :" << response->succeeded;
     if (!response->succeeded)
         qDebug() << "[QS3Tester]: Error     :" << response->error;
