@@ -18,6 +18,7 @@ namespace QS3
     enum RequestType
     {
         ListObjects = 0,
+        RemoveObject,
         GetObject,
         PutObject,
         GetAcl,
@@ -142,43 +143,13 @@ public:
 
     QS3::RequestType type;
     QUrl url;
-
-protected:
-     virtual void emitFinished() = 0;
-};
-
-// QS3GetObjectResponse
-
-class QTS3SHARED_EXPORT QS3GetObjectResponse : public QS3Response
-{
-Q_OBJECT
-
-public:
-    QS3GetObjectResponse(const QUrl &url);
-    QByteArray data;
-
-signals:
-    void finished(QS3GetObjectResponse *response);
-
-protected:
-    void emitFinished();
-};
-
-// QS3PutObjectResponse
-
-class QTS3SHARED_EXPORT QS3PutObjectResponse : public QS3Response
-{
-Q_OBJECT
-
-public:
-    QS3PutObjectResponse(const QUrl &url);
     bool succeeded;
-    
-signals:
-    void finished(QS3PutObjectResponse *response);
+    QString error;
 
 protected:
-    void emitFinished();
+    /// Each inheriting class needs to implement this function
+    /// and emit its finished/failed signal.
+    virtual void emitFinished() = 0;
 };
 
 // QSS3ListObjectsResponse
@@ -193,7 +164,68 @@ public:
     QS3ObjectList objects;
 
 signals:
+    /// Request response finished.
+    /** This signal will fire if the request succeeded and
+        if it fails. Check succeeded and error members for the status. */
     void finished(QS3ListObjectsResponse *response);
+
+protected:
+    void emitFinished();
+};
+
+// QS3RemoveObjectResponse
+
+class QTS3SHARED_EXPORT QS3RemoveObjectResponse : public QS3Response
+{
+Q_OBJECT
+
+public:
+    QS3RemoveObjectResponse(const QUrl &url);
+
+signals:
+    /// Request response finished.
+    /** This signal will fire if the request succeeded and
+        if it fails. Check succeeded and error members for the status. */
+    void finished(QS3RemoveObjectResponse *response);
+
+protected:
+    void emitFinished();
+};
+
+// QS3GetObjectResponse
+
+class QTS3SHARED_EXPORT QS3GetObjectResponse : public QS3Response
+{
+Q_OBJECT
+
+public:
+    QS3GetObjectResponse(const QUrl &url);
+    QByteArray data;
+
+signals:
+    /// Request response finished.
+    /** This signal will fire if the request succeeded and
+        if it fails. Check succeeded and error members for the status. */
+    void finished(QS3GetObjectResponse *response);
+
+protected:
+    void emitFinished();
+};
+
+// QS3PutObjectResponse
+
+class QTS3SHARED_EXPORT QS3PutObjectResponse : public QS3Response
+{
+Q_OBJECT
+
+public:
+    QS3PutObjectResponse(const QUrl &url);
+    
+signals:
+    /// Request response finished.
+    /** This signal will fire if the request succeeded and
+        if it fails. Check succeeded and error members for the status. */
+    void finished(QS3PutObjectResponse *response);
 
 protected:
     void emitFinished();
@@ -210,6 +242,9 @@ public:
     QS3Acl acl;
 
 signals:
+    /// Request response finished.
+    /** This signal will fire if the request succeeded and
+        if it fails. Check succeeded and error members for the status. */
     void finished(QS3GetAclResponse *response);
 
 protected:
@@ -224,9 +259,11 @@ Q_OBJECT
 
 public:
     QS3SetAclResponse(const QUrl &url);
-    bool succeeded;
 
 signals:
+    /// Request response finished.
+    /** This signal will fire if the request succeeded and
+        if it fails. Check succeeded and error members for the status. */
     void finished(QS3SetAclResponse *response);
 
 protected:

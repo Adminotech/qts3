@@ -7,178 +7,187 @@
 #include <QDomNode>
 #include <QDebug>
 
-bool QS3Xml::parseListObjects(QS3ListObjectsResponse *response, const QByteArray &data)
+namespace QS3Xml
 {
-    QDomDocument doc;
-    if (!doc.setContent(data))
-        return false;
-    
-    // <ListBucketResult>
-    QDomElement root = doc.documentElement();
-    if (root.isNull())
-        return false;
-
-    response->isTruncated = root.firstChildElement("IsTruncated").text() == "true" ? true : false;
-
-    QDomNodeList contents = root.elementsByTagName("Contents");
-    for(int i=0; i<contents.size(); ++i)
+    bool parseListObjects(QS3ListObjectsResponse *response, const QByteArray &data, QString &errorMessage)
     {
-        QS3Object object;
-
-        /// @todo Set object.isDir properly, see <CommonPrefixes>
-
-        QDomElement child = contents.item(i).firstChildElement();
-        while(!child.isNull())
-        {
-            if (child.nodeName() == "Key")
-                object.key = child.text();
-            else if (child.nodeName() == "LastModified")
-                object.lastModified = child.text();
-            else if (child.nodeName() == "ETag")
-                object.eTag = child.text();
-            else if (child.nodeName() == "Size")
-                object.size = child.text().toUInt();
-            child = child.nextSiblingElement();
-        }
-
-        if (!object.key.isEmpty())
-        {
-            if (object.key.endsWith("/") && object.size == 0)
-                object.isDir = true;
-            response->objects << object;
-        }
-    }
-
-    return true;
-}
-
-bool QS3Xml::parseAclObjects(QS3GetAclResponse *response, const QByteArray &data)
-{
-    QDomDocument doc;
-    if (!doc.setContent(data))
-        return false;
-
-    // <AccessControlPolicy>
-    QDomElement root = doc.documentElement();
-    if (root.isNull())
-        return false;
-
-    QDomElement owner = root.firstChildElement("Owner");
-    QString bucketOwnerName = !owner.isNull() ? owner.firstChildElement("DisplayName").text() : "";
-    QString bucketOwnerId = !owner.isNull() ? owner.firstChildElement("ID").text() : "";
-    if (bucketOwnerName.isEmpty() || bucketOwnerName.isEmpty())
-    {
-        qDebug() << "QS3Xml: Failed to find <ID> and/or <DisplayName> from <Owner>";
-        return false;
-    }
-
-    QS3Acl acl;
-    acl.ownerName = bucketOwnerName;
-    acl.ownerId = bucketOwnerId;
-    acl.key = response->url.path();
-    if (acl.key.isEmpty())
-        acl.key = "/";
-
-    QDomElement accessList = root.firstChildElement("AccessControlList");
-    if (accessList.isNull())
-        return false;
-
-    QDomNodeList child = accessList.elementsByTagName("Grant");
-    for(int i=0; i<child.size(); ++i)
-    {
-        QDomNode grant = child.item(i);
+        QDomDocument doc;
+        if (!doc.setContent(data, &errorMessage))
+            return false;
         
-        // Read needed data from <Grantee>
-        QString permissionString = grant.firstChildElement("Permission").text();
-        if (permissionString.isEmpty())
+        // <ListBucketResult>
+        QDomElement root = doc.documentElement();
+        if (root.isNull())
         {
-            qDebug() << "QS3Xml: Failed to find <Permission> from <Grant>";
-            continue;
+            errorMessage = "Failed to get document root element. XML response was invalid.";
+            return false;
         }
-        QDomElement grantee = grant.firstChildElement("Grantee");
-        QString granteeType = grantee.attribute("xsi:type", "CanonicalUser");
-        
-        // CanonicalUser means this is either the bucket owner or custom user.
-        if (granteeType == "CanonicalUser")
+
+        response->isTruncated = root.firstChildElement(NODE_NAME_TRUNCATED).text() == "true" ? true : false;
+
+        QDomNodeList contents = root.elementsByTagName(NODE_NAME_CONTENTS);
+        for(int i=0; i<contents.size(); ++i)
         {
-            QString username = grantee.firstChildElement("DisplayName").text();
-            QString id = grantee.firstChildElement("ID").text();
-            if (granteeType == "CanonicalUser" && (id.isEmpty() || username.isEmpty()))
+            QS3Object object;
+
+            /// @todo Set object.isDir properly, see <CommonPrefixes>
+
+            QDomElement child = contents.item(i).firstChildElement();
+            while(!child.isNull())
             {
-                qDebug() << "QS3Xml: Failed to find <ID> and/or <DisplayName> from <Grantee>";
-                continue;
+                if (child.nodeName() == NODE_NAME_KEY)
+                    object.key = child.text();
+                else if (child.nodeName() == NODE_NAME_LASTMODIFIED)
+                    object.lastModified = child.text();
+                else if (child.nodeName() == NODE_NAME_ETAG)
+                    object.eTag = child.text();
+                else if (child.nodeName() == NODE_NAME_SIZE)
+                    object.size = child.text().toUInt();
+                child = child.nextSiblingElement();
             }
 
-            QS3AclPermissions *permissions = acl.getPermissionById(id);
-            if (permissions)
+            if (!object.key.isEmpty())
             {
-                if (permissionString == "FULL_CONTROL")
-                    permissions->fullControl = true;
-                else if (permissionString == "WRITE")
-                    permissions->write = true;
-                else if (permissionString == "WRITE_ACP")
-                    permissions->writeACP = true;
-                else if (permissionString == "READ")
-                    permissions->read = true;
-                else if (permissionString == "READ_ACP")
-                    permissions->readACP = true;
+                if (object.key.endsWith(ROOT_PATH) && object.size == 0)
+                    object.isDir = true;
+                response->objects << object;
             }
-            else
+        }
+
+        return true;
+    }
+
+    bool parseAclObjects(QS3GetAclResponse *response, const QByteArray &data, QString &errorMessage)
+    {
+        QDomDocument doc;
+        if (!doc.setContent(data, &errorMessage))
+            return false;
+
+        // <AccessControlPolicy>
+        QDomElement root = doc.documentElement();
+        if (root.isNull())
+        {
+            errorMessage = "Failed to get document root element. XML response was invalid.";
+            return false;
+        }
+
+        QDomElement owner = root.firstChildElement(NODE_NAME_OWNER);
+        QString bucketOwnerName = !owner.isNull() ? owner.firstChildElement(NODE_NAME_DISPLAY_NAME).text() : "";
+        QString bucketOwnerId = !owner.isNull() ? owner.firstChildElement(NODE_NAME_ID).text() : "";
+        if (bucketOwnerName.isEmpty() || bucketOwnerName.isEmpty())
+        {
+            errorMessage = "Failed to find <ID> and/or <DisplayName> from <Owner>. XML response was invalid.";
+            return false;
+        }
+
+        QS3Acl acl;
+        acl.ownerName = bucketOwnerName;
+        acl.ownerId = bucketOwnerId;
+        acl.key = response->url.path();
+        if (acl.key.isEmpty())
+            acl.key = ROOT_PATH;
+
+        QDomElement accessList = root.firstChildElement(NODE_NAME_ACC_CTRL_LIST);
+        if (accessList.isNull())
+            return false;
+
+        QDomNodeList child = accessList.elementsByTagName(NODE_NAME_GRANT);
+        for(int i=0; i<child.size(); ++i)
+        {
+            QDomNode grant = child.item(i);
+            
+            // Read needed data from <Grantee>
+            QString permissionString = grant.firstChildElement(NODE_NAME_PERMISSION).text();
+            if (permissionString.isEmpty())
             {
-                QS3AclPermissions newPermissions;
-                newPermissions.username = username;
-                newPermissions.id = id;
-                if (permissionString == "FULL_CONTROL")
-                    newPermissions.fullControl = true;
-                else if (permissionString == "WRITE")
-                    newPermissions.write = true;
-                else if (permissionString == "WRITE_ACP")
-                    newPermissions.writeACP = true;
-                else if (permissionString == "READ")
-                    newPermissions.read = true;
-                else if (permissionString == "READ_ACP")
-                    newPermissions.readACP = true;
-                    
-                if (newPermissions.id == acl.ownerId)
-                    acl.ownerUser = newPermissions;
+                errorMessage = "Failed to find <Permission> from <Grant>. XML response was invalid.";
+                return false;
+            }
+            QDomElement grantee = grant.firstChildElement(NODE_NAME_GRANTEE);
+            QString granteeType = grantee.attribute(ATTRIBUTE_XSI_TYPE, GRANTEE_TYPE_USER);
+            
+            // CanonicalUser means this is either the bucket owner or custom user.
+            if (granteeType == GRANTEE_TYPE_USER)
+            {
+                QString username = grantee.firstChildElement(NODE_NAME_DISPLAY_NAME).text();
+                QString id = grantee.firstChildElement(NODE_NAME_ID).text();
+                if (id.isEmpty() || username.isEmpty())
+                {
+                    errorMessage = "QS3Xml: Failed to find <ID> and/or <DisplayName> from <Grantee>. XML response was invalid.";
+                    return false;
+                }
+
+                QS3AclPermissions *permissions = acl.getPermissionById(id);
+                if (permissions)
+                {
+                    if (permissionString == ACL_FULL_CONTROL)
+                        permissions->fullControl = true;
+                    else if (permissionString == ACL_WRITE)
+                        permissions->write = true;
+                    else if (permissionString == ACL_WRITE_ACP)
+                        permissions->writeACP = true;
+                    else if (permissionString == ACL_READ)
+                        permissions->read = true;
+                    else if (permissionString == ACL_READ_ACP)
+                        permissions->readACP = true;
+                }
                 else
-                    acl.userPermissions << newPermissions;
+                {
+                    QS3AclPermissions newPermissions;
+                    newPermissions.username = username;
+                    newPermissions.id = id;
+                    if (permissionString == ACL_FULL_CONTROL)
+                        newPermissions.fullControl = true;
+                    else if (permissionString == ACL_WRITE)
+                        newPermissions.write = true;
+                    else if (permissionString == ACL_WRITE_ACP)
+                        newPermissions.writeACP = true;
+                    else if (permissionString == ACL_READ)
+                        newPermissions.read = true;
+                    else if (permissionString == ACL_READ_ACP)
+                        newPermissions.readACP = true;
+                        
+                    if (newPermissions.id == acl.ownerId)
+                        acl.ownerUser = newPermissions;
+                    else
+                        acl.userPermissions << newPermissions;
+                }
+            }
+            // Specific Amazon S3 groups
+            else if (granteeType == GRANTEE_TYPE_GROUP)
+            {
+                /// @todo Support http://acs.amazonaws.com/groups/s3/LogDelivery group
+                QString groupUri = grantee.firstChildElement(NODE_NAME_URI).text();
+                if (groupUri == GROUP_URI_ALL_USERS)
+                {
+                    if (permissionString == ACL_FULL_CONTROL)
+                        acl.allUsers.fullControl = true;
+                    else if (permissionString == ACL_WRITE)
+                        acl.allUsers.write = true;
+                    else if (permissionString == ACL_WRITE_ACP)
+                        acl.allUsers.writeACP = true;
+                    else if (permissionString == ACL_READ)
+                        acl.allUsers.read = true;
+                    else if (permissionString == ACL_READ_ACP)
+                        acl.allUsers.readACP = true;
+                }
+                else if (groupUri == GROUP_URI_AUTH_USERS)
+                {
+                    if (permissionString == ACL_FULL_CONTROL)
+                        acl.authenticatedUsers.fullControl = true;
+                    else if (permissionString == ACL_WRITE)
+                        acl.authenticatedUsers.write = true;
+                    else if (permissionString == ACL_WRITE_ACP)
+                        acl.authenticatedUsers.writeACP = true;
+                    else if (permissionString == ACL_READ)
+                        acl.authenticatedUsers.read = true;
+                    else if (permissionString == ACL_READ_ACP)
+                        acl.authenticatedUsers.readACP = true;
+                }
             }
         }
-        // Spesific Amazon S3 groups
-        else if (granteeType == "Group")
-        {
-            /// @todo Support http://acs.amazonaws.com/groups/s3/LogDelivery group
-            QString groupUri = grantee.firstChildElement("URI").text();
-            if (groupUri == "http://acs.amazonaws.com/groups/global/AllUsers")
-            {
-                if (permissionString == "FULL_CONTROL")
-                    acl.allUsers.fullControl = true;
-                else if (permissionString == "WRITE")
-                    acl.allUsers.write = true;
-                else if (permissionString == "WRITE_ACP")
-                    acl.allUsers.writeACP = true;
-                else if (permissionString == "READ")
-                    acl.allUsers.read = true;
-                else if (permissionString == "READ_ACP")
-                    acl.allUsers.readACP = true;
-            }
-            else if (groupUri == "http://acs.amazonaws.com/groups/global/AuthenticatedUsers")
-            {
-                if (permissionString == "FULL_CONTROL")
-                    acl.authenticatedUsers.fullControl = true;
-                else if (permissionString == "WRITE")
-                    acl.authenticatedUsers.write = true;
-                else if (permissionString == "WRITE_ACP")
-                    acl.authenticatedUsers.writeACP = true;
-                else if (permissionString == "READ")
-                    acl.authenticatedUsers.read = true;
-                else if (permissionString == "READ_ACP")
-                    acl.authenticatedUsers.readACP = true;
-            }
-        }
+        
+        response->acl = acl;
+        return true;       
     }
-    
-    response->acl = acl;
-    return true;       
 }

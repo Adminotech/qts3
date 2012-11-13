@@ -2,63 +2,72 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 #include <QDateTime>
 #include <QHash>
 #include <QCryptographicHash>
 #include <QByteArray>
 
-namespace QS3Helpers
-{
+namespace QS3
+{   
+    static QString NEWLINE = "\n";
+    static QString ROOT_PATH = "/";
+
+    static QStringList AMAZON_QUERY_KEYS;
+    static QHash<uint, QString> MONTHS;
+    static QHash<uint, QString> DAYS;
+
+    static QByteArray AMAZON_HEADER_PREFIX = "x-amz-";
+    static QByteArray AMAZON_HEADER_ACL = "x-amz-acl";
+    static QByteArray STANDARD_HEADER_AUTHORIZATION = "Authorization";
+    static QByteArray STANDARD_HEADER_DATE = "Date";
+
+    static void initStaticData()
+    {
+        AMAZON_QUERY_KEYS.clear();
+        AMAZON_QUERY_KEYS << "versioning" << "location" 
+                          << "acl" << "torrent" 
+                          << "lifecycle" << "versionid";
+
+        MONTHS.clear();
+        MONTHS[1] = "Jan";
+        MONTHS[2] = "Feb";
+        MONTHS[3] = "Mar";
+        MONTHS[4] = "Apr";
+        MONTHS[5] = "May";
+        MONTHS[6] = "Jun";
+        MONTHS[7] = "Jul";
+        MONTHS[8] = "Aug";
+        MONTHS[9] = "Sep";
+        MONTHS[10] = "Oct";
+        MONTHS[11] = "Nov";
+        MONTHS[12] = "Dec";
+
+        DAYS.clear();
+        DAYS[1] = "Mon";
+        DAYS[2] = "Tue";
+        DAYS[3] = "Wed";
+        DAYS[4] = "Thu";
+        DAYS[5] = "Fri";
+        DAYS[6] = "Sat";
+        DAYS[7] = "Sun";
+    }
+
     bool QueryItemCompare(const QS3QueryPair &q1, const QS3QueryPair &q2)
     {
         return (q1.first.compare(q2.first) < 0);
     }
-    
-    static QString newline = "\n";
-    static QHash<uint, QString> months;
-    static QHash<uint, QString> days;
-
-    static void checkTimestampInit()
-    {
-        if (months.isEmpty())
-        {
-            months[1] = "Jan";
-            months[2] = "Feb";
-            months[3] = "Mar";
-            months[4] = "Apr";
-            months[5] = "May";
-            months[6] = "Jun";
-            months[7] = "Jul";
-            months[8] = "Aug";
-            months[9] = "Sep";
-            months[10] = "Oct";
-            months[11] = "Nov";
-            months[12] = "Dec";
-        }
-        if (days.isEmpty())
-        {
-            days[1] = "Mon";
-            days[2] = "Tue";
-            days[3] = "Wed";
-            days[4] = "Thu";
-            days[5] = "Fri";
-            days[6] = "Sat";
-            days[7] = "Sun";
-        }
-    }
 
     static QString generateTimestamp()
     {
-        checkTimestampInit();
-
         // Generate the needed timestamp
         // http://www.ietf.org/rfc/rfc2616.txt 3.3 Date/Time Formats
         // Example: Tue, 27 Mar 2007 19:36:42 GMT
         QString formatted;
         QDateTime current = QDateTime::currentDateTime().toUTC();
-        formatted.append(days[current.date().dayOfWeek()] + ", ");      // 'Tue, '
+        formatted.append(DAYS[current.date().dayOfWeek()] + ", ");      // 'Tue, '
         formatted.append(current.toString("dd") + " ");                 // '27 '
-        formatted.append(months[current.date().month()] + " ");         // 'Mar '
+        formatted.append(MONTHS[current.date().month()] + " ");         // 'Mar '
         formatted.append(current.toString("yyyy hh:mm:ss") + " GMT");   // '2007 19:36:42 GMT'
         return formatted;
     }
@@ -181,7 +190,7 @@ namespace QS3Helpers
         if (queryItems.isEmpty())
             return "";
 
-        qSort(queryItems.begin(), queryItems.end(), QS3Helpers::QueryItemCompare);
+        qSort(queryItems.begin(), queryItems.end(), QS3::QueryItemCompare);
         Q3SQueryParams queryParams;
         foreach(QS3QueryPair queryPair, queryItems)
         {

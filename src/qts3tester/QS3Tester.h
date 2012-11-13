@@ -14,6 +14,7 @@ public:
 
 private slots:
     void OnListObjectsRespose(QS3ListObjectsResponse *response);
+    void OnRemoveObjectRespose(QS3RemoveObjectResponse *response);
     void OnGetObjectRespose(QS3GetObjectResponse *response);
     void OnPutObjectRespose(QS3PutObjectResponse *response);
     void OnAclGetRespose(QS3GetAclResponse *response);

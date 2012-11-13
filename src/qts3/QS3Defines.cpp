@@ -166,12 +166,38 @@ QString QS3Acl::toString() const
 
 QS3Response::QS3Response(const QUrl &url_, QS3::RequestType type_) :
     url(url_),
-    type(type_)
+    type(type_),
+    succeeded(false)
 {
 }
 
 QS3Response::~QS3Response()
 {
+}
+
+// QS3ListObjectsResponse
+
+QS3ListObjectsResponse::QS3ListObjectsResponse(const QUrl &url) :
+    QS3Response(url, QS3::ListObjects),
+    isTruncated(false)
+{
+}
+
+void QS3ListObjectsResponse::emitFinished()
+{
+    emit finished(this);
+}
+
+// QS3DeleteObjectResponse
+
+QS3RemoveObjectResponse::QS3RemoveObjectResponse(const QUrl &url) :
+    QS3Response(url, QS3::RemoveObject)
+{
+}
+
+void QS3RemoveObjectResponse::emitFinished()
+{
+    emit finished(this);
 }
 
 // QS3GetObjectResponse
@@ -189,26 +215,12 @@ void QS3GetObjectResponse::emitFinished()
 // QS3PutObjectResponse
 
 QS3PutObjectResponse::QS3PutObjectResponse(const QUrl &url) :
-    QS3Response(url, QS3::PutObject),
-    succeeded(false)
+    QS3Response(url, QS3::PutObject)
 {
 
 }
 
 void QS3PutObjectResponse::emitFinished()
-{
-    emit finished(this);
-}
-
-// QS3ListObjectsResponse
-
-QS3ListObjectsResponse::QS3ListObjectsResponse(const QUrl &url) :
-    QS3Response(url, QS3::ListObjects),
-    isTruncated(false)
-{
-}
-
-void QS3ListObjectsResponse::emitFinished()
 {
     emit finished(this);
 }
@@ -228,8 +240,7 @@ void QS3GetAclResponse::emitFinished()
 // QS3SetAclResponse
 
 QS3SetAclResponse::QS3SetAclResponse(const QUrl &url) :
-    QS3Response(url, QS3::SetAcl),
-    succeeded(false)
+    QS3Response(url, QS3::SetAcl)
 {
 }
 

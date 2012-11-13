@@ -11,6 +11,17 @@
 #include <QByteArray>
 #include <QUrl>
 
+/** QS3Client provides access to Amazon S3 file storage.
+   
+    There are two ways of connecting to responses, the model
+    resembles that of QNetworkAccessManager.
+
+    1) Connect to each response objects finished signal
+       and the error signals in QS3Client. 
+    2) Connect to the QS3Client finished signals, one for each type
+       of response and the error signals in QS3Client.
+*/
+
 class QTS3SHARED_EXPORT QS3Client : public QObject
 {
 Q_OBJECT
@@ -20,7 +31,6 @@ public:
     ~QS3Client();
 
 public slots:
-    
     /// List bucket objects.
     /** @param QString prefix for the request.
         @param QString delimiter for the request.
@@ -30,8 +40,15 @@ public slots:
         If you want to control the total amount of returned objects use 
         prefix and delimiter for filtering. */
     QS3ListObjectsResponse *listObjects(const QString &prefix = "", const QString &delimiter = "", uint maxObjects = 1000);
+
+    /// Remove object with key.
+    /** @param QString key aka path in the bucket.
+        @return QS3DeleteObjectResponse response object. 
+        @note If the target is a folder it needs to be empty for it to be removed.
+        @todo Automate the above so each file is removed from the folder automatically. */
+    QS3RemoveObjectResponse *remove(const QString &key);
     
-    /// Get key.
+    /// Get object with key.
     /** @param QString key aka path in the bucket.
         @return QS3GetObjectResponse response object. */
     QS3GetObjectResponse *get(const QString &key);
@@ -52,13 +69,13 @@ public slots:
         @note Returned response can be null if invalid input params were given. */
     QS3PutObjectResponse *put(const QString &key, const QByteArray &data, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl = QS3::NoCannedAcl);
     
-    /// Get acl for key.
+    /// Get object ACL for key.
     /** @param QString key.
         @return QS3GetAclResponse response object. 
         @note Default key value is "/" that is bucket root.*/
     QS3GetAclResponse *getAcl(const QString &key = "/");
 
-    // Set acl for key.
+    // Set object ACL for key.
     /** @param QString key. Key cannot be "/" that is bucket root.
         @param QS3::CannedAcl canned acl. Beware that this resets 
         the current acl state and set it as cannedAcl.
@@ -78,6 +95,10 @@ signals:
     /// QS3ListObjectsResponse has finished.
     /** @note Do not store the emitted pointer. It will be automatically destroyed. */
     void finished(QS3ListObjectsResponse *response);
+
+    /// QS3RemoveObjectResponse has finished.
+    /** @note Do not store the emitted pointer. It will be automatically destroyed. */
+    void finished(QS3RemoveObjectResponse *response);
     
     /// QS3GetObjectResponse has finished.
     /** @note Do not store the emitted pointer. It will be automatically destroyed. */
