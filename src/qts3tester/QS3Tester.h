@@ -15,7 +15,9 @@ public:
 private slots:
     void OnListObjectsRespose(QS3ListObjectsResponse *response);
     void OnGetObjectRespose(QS3GetObjectResponse *response);
-    void OnAclRespose(QS3AclResponse *response);
+    void OnPutObjectRespose(QS3PutObjectResponse *response);
+    void OnAclGetRespose(QS3GetAclResponse *response);
+    void OnAclSetRespose(QS3SetAclResponse *response);
     
     void OnErrorMessage(const QString &message);
     void OnFailed(QS3Response *response, const QString &message);

@@ -1,6 +1,8 @@
 
 #include "QS3Defines.h"
 
+// QS3Config
+
 QS3Config::QS3Config(const QString &accessKey_, const QString &secredKey_, const QString &bucket_, const QString &host_) :
     accessKey(accessKey_),
     secredKey(secredKey_),
@@ -22,6 +24,26 @@ QS3Config::QS3Config(const QS3Config &other)
     host = other.host;
     bucket = other.bucket;
 }
+
+// QS3FileMetaData
+
+QS3FileMetadata::QS3FileMetadata(QString contentType_, const QString &contentEncoding_) :
+    contentType(contentType_),
+    contentEncoding(contentEncoding_)
+{
+}
+
+QS3FileMetadata::QS3FileMetadata(const QS3FileMetadata &other)
+{
+    contentType = other.contentType;
+    contentEncoding = other.contentEncoding;
+}
+
+QS3FileMetadata::~QS3FileMetadata()
+{
+}
+
+// QS3Object
 
 QS3Object::QS3Object() :
     size(0),
@@ -46,6 +68,8 @@ QString QS3Object::toString() const
 {
     return QString("key=%1 size=%2").arg(key).arg(size);
 }
+
+// QS3AclPermissions
 
 QS3AclPermissions::QS3AclPermissions() :
     fullControl(false),
@@ -75,6 +99,8 @@ QString QS3AclPermissions::toString() const
 {
     return QString("username=%1 fullControl=%2 read=%3 write=%4 readACP=%5 writeACP=%6 id[0:7]=%7").arg(username).arg(fullControl).arg(read).arg(write).arg(readACP).arg(writeACP).arg(id.left(7));
 }
+
+// QS3Acl
 
 QS3Acl::QS3Acl()
 {
@@ -136,6 +162,8 @@ QString QS3Acl::toString() const
     return QString("key=%1 ownerName=%2 ownerId[0:7]=%3").arg(key).arg(ownerName).arg(ownerId.left(7));
 }
 
+// QS3Response
+
 QS3Response::QS3Response(const QUrl &url_, QS3::RequestType type_) :
     url(url_),
     type(type_)
@@ -146,6 +174,8 @@ QS3Response::~QS3Response()
 {
 }
 
+// QS3GetObjectResponse
+
 QS3GetObjectResponse::QS3GetObjectResponse(const QUrl &url) :
     QS3Response(url, QS3::GetObject)
 {
@@ -155,6 +185,22 @@ void QS3GetObjectResponse::emitFinished()
 {
     emit finished(this);
 }
+
+// QS3PutObjectResponse
+
+QS3PutObjectResponse::QS3PutObjectResponse(const QUrl &url) :
+    QS3Response(url, QS3::PutObject),
+    succeeded(false)
+{
+
+}
+
+void QS3PutObjectResponse::emitFinished()
+{
+    emit finished(this);
+}
+
+// QS3ListObjectsResponse
 
 QS3ListObjectsResponse::QS3ListObjectsResponse(const QUrl &url) :
     QS3Response(url, QS3::ListObjects),
@@ -167,12 +213,27 @@ void QS3ListObjectsResponse::emitFinished()
     emit finished(this);
 }
 
-QS3AclResponse::QS3AclResponse(const QUrl &url) :
-    QS3Response(url, QS3::Acl)
+// QS3GetAclResponse
+
+QS3GetAclResponse::QS3GetAclResponse(const QUrl &url) :
+    QS3Response(url, QS3::GetAcl)
 {
 }
 
-void QS3AclResponse::emitFinished()
+void QS3GetAclResponse::emitFinished()
+{
+    emit finished(this);
+}
+
+// QS3SetAclResponse
+
+QS3SetAclResponse::QS3SetAclResponse(const QUrl &url) :
+    QS3Response(url, QS3::SetAcl),
+    succeeded(false)
+{
+}
+
+void QS3SetAclResponse::emitFinished()
 {
     emit finished(this);
 }

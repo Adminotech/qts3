@@ -9,8 +9,10 @@
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QFile>
 #include <QDebug>
-
+#include <QMimeData>
+ 
 QS3Client::QS3Client(const QS3Config &config, QObject *parent) :
     QObject(parent),
     config_(config),
@@ -21,6 +23,19 @@ QS3Client::QS3Client(const QS3Config &config, QObject *parent) :
 
 QS3Client::~QS3Client()
 {
+    disconnect(network_, SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
+    
+    foreach(QNetworkReply *ongoingReply, requests_.keys())
+    {
+        if (!ongoingReply)
+            continue;
+        ongoingReply->abort();
+        ongoingReply->deleteLater();
+        QS3Response *ongoingResponse = requests_[ongoingReply];
+        if (ongoingResponse)
+            delete ongoingResponse;
+    }
+    requests_.clear();
 }
 
 void QS3Client::setBucket(const QString &bucket)
@@ -31,33 +46,6 @@ void QS3Client::setBucket(const QString &bucket)
 QString QS3Client::bucket() const
 {
     return config_.bucket;
-}
-
-QS3GetObjectResponse *QS3Client::get(const QString &key)
-{
-    QNetworkRequest request(generateUrl(key));
-    prepareRequest(&request, "GET");
-    QNetworkReply *reply = network_->get(request);
-
-    QS3GetObjectResponse *response = new QS3GetObjectResponse(request.url());
-    requests_[reply] = response;
-    
-    return response;
-}
-
-QS3AclResponse *QS3Client::getAcl(const QString &key)
-{
-    Q3SQueryParams params;
-    params["acl"] = "";
-    
-    QNetworkRequest request(generateUrl(key, params));
-    prepareRequest(&request, "GET");
-    QNetworkReply *reply = network_->get(request);
-
-    QS3AclResponse *response = new QS3AclResponse(request.url());
-    requests_[reply] = response;
-    
-    return response;
 }
 
 QS3ListObjectsResponse *QS3Client::listObjects(const QString &prefix, const QString &delimiter, uint maxObjects)
@@ -79,13 +67,138 @@ QS3ListObjectsResponse *QS3Client::listObjects(const QString &prefix, const QStr
 
 void QS3Client::listObjectsContinue(QS3ListObjectsResponse *response)
 {
-    addOrReplaceQuery(&response->url, "marker", response->objects.last().key);
+    QS3Helpers::addOrReplaceQuery(&response->url, "marker", response->objects.last().key);
 
     QNetworkRequest request(response->url);
     prepareRequest(&request, "GET");
     QNetworkReply *reply = network_->get(request);
 
     requests_[reply] = response;
+}
+
+QS3GetObjectResponse *QS3Client::get(const QString &key)
+{
+    QNetworkRequest request(generateUrl(key));
+    prepareRequest(&request, "GET");
+    QNetworkReply *reply = network_->get(request);
+
+    QS3GetObjectResponse *response = new QS3GetObjectResponse(request.url());
+    requests_[reply] = response;
+    
+    return response;
+}
+
+QS3PutObjectResponse *QS3Client::put(const QString &key, QFile *file, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl)
+{
+    if (key.trimmed().isEmpty() || key.trimmed() == "/")
+    {
+        qDebug() << "QS3Client::put() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+    
+    if (!file)
+    {
+        qDebug() << "QS3Client::put() Error: Input QFile is null.";
+        return 0;
+    }
+    if (!file->exists())
+    {
+        qDebug() << "QS3Client::put() Error: Input QFile does not exist on disk:" << file->fileName();
+        return 0;
+    }
+    if (!file->open(QIODevice::ReadOnly))
+    {
+        qDebug() << "QS3Client::put() Error: Input QFile could not be opened in read only mode.";
+        return 0;
+    }
+    QByteArray data = file->readAll();
+    file->close();
+    
+    return put(key, data, metadata, cannedAcl);
+}
+
+QS3PutObjectResponse *QS3Client::put(const QString &key, const QByteArray &data, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl)
+{
+    if (key.trimmed().isEmpty() || key.trimmed() == "/")
+    {
+        qDebug() << "QS3Client::put() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+    if (data.isEmpty())
+    {
+        qDebug() << "QS3Client::put() Error: Input data is empty.";
+        return 0;
+    }
+
+    QByteArray aclHeader = "";
+    if (cannedAcl != QS3::NoCannedAcl)
+    {
+        aclHeader = QS3Helpers::cannedAclToHeader(cannedAcl);
+        if (aclHeader.isEmpty())
+            qDebug() << "QS3Client::put() Warning: Input QS3::CannedAcl is invalid:" << cannedAcl;
+    }
+
+    // Setup headers
+    QNetworkRequest request(generateUrl(key));
+    request.setHeader(QNetworkRequest::ContentLengthHeader, data.size());
+    if (!metadata.contentType.isEmpty())
+        request.setHeader(QNetworkRequest::ContentTypeHeader, metadata.contentType);
+    if (!metadata.contentEncoding.isEmpty())
+        request.setRawHeader("Content-Encoding", metadata.contentEncoding.toUtf8());
+    if (!aclHeader.isEmpty())
+        request.setRawHeader("x-amz-acl", aclHeader);
+
+    prepareRequest(&request, "PUT");
+    QNetworkReply *reply = network_->put(request, data);
+
+    QS3PutObjectResponse *response = new QS3PutObjectResponse(request.url());
+    requests_[reply] = response;
+
+    return response;
+}
+
+QS3GetAclResponse *QS3Client::getAcl(const QString &key)
+{
+    Q3SQueryParams params;
+    params["acl"] = "";
+    
+    QNetworkRequest request(generateUrl(key, params));
+    prepareRequest(&request, "GET");
+    QNetworkReply *reply = network_->get(request);
+
+    QS3GetAclResponse *response = new QS3GetAclResponse(request.url());
+    requests_[reply] = response;
+    
+    return response;
+}
+
+QS3SetAclResponse *QS3Client::setCannedAcl(const QString &key, QS3::CannedAcl cannedAcl)
+{
+    if (key.trimmed().isEmpty() || key.trimmed() == "/")
+    {
+        qDebug() << "QS3Client::setCannedAcl() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+
+    QByteArray aclHeader = QS3Helpers::cannedAclToHeader(cannedAcl);
+    if (aclHeader.isEmpty())
+    {
+        qDebug() << "QS3Client::setCannedAcl() Error: Input QS3::CannedAcl is invalid:" << cannedAcl;
+        return 0;
+    }
+
+    Q3SQueryParams params;
+    params["acl"] = "";
+
+    QNetworkRequest request(generateUrl(key, params));
+    request.setRawHeader("x-amz-acl", aclHeader);
+    prepareRequest(&request, "PUT");
+    QNetworkReply *reply = network_->put(request, "");
+
+    QS3SetAclResponse *response = new QS3SetAclResponse(request.url());
+    requests_[reply] = response;
+
+    return response;
 }
 
 void QS3Client::onReply(QNetworkReply *reply)
@@ -118,18 +231,6 @@ void QS3Client::onReply(QNetworkReply *reply)
     bool internalError = false;
     switch (responseBase->type)
     {
-        case QS3::GetObject:
-        {
-            QS3GetObjectResponse *response = qobject_cast<QS3GetObjectResponse*>(responseBase);
-            if (response)
-            {
-                response->data = reply->readAll();
-                emit finished(response);
-            }
-            else
-                internalError = true;
-            break;
-        }
         case QS3::ListObjects:
         {
             QS3ListObjectsResponse *response = qobject_cast<QS3ListObjectsResponse*>(responseBase);
@@ -152,9 +253,33 @@ void QS3Client::onReply(QNetworkReply *reply)
                 internalError = true;
             break;
         }
-        case QS3::Acl:
+        case QS3::GetObject:
         {
-            QS3AclResponse *response = qobject_cast<QS3AclResponse*>(responseBase);
+            QS3GetObjectResponse *response = qobject_cast<QS3GetObjectResponse*>(responseBase);
+            if (response)
+            {
+                response->data = reply->readAll();
+                emit finished(response);
+            }
+            else
+                internalError = true;
+            break;
+        }
+        case QS3::PutObject:
+        {
+            QS3PutObjectResponse *response = qobject_cast<QS3PutObjectResponse*>(responseBase);
+            if (response)
+            {
+                response->succeeded = true;
+                emit finished(response);
+            }
+            else
+                internalError = true;
+            break;
+        }
+        case QS3::GetAcl:
+        {
+            QS3GetAclResponse *response = qobject_cast<QS3GetAclResponse*>(responseBase);
             if (response)
             {
                 if (!QS3Xml::parseAclObjects(response, reply->readAll()))
@@ -163,6 +288,18 @@ void QS3Client::onReply(QNetworkReply *reply)
                     responseBase->deleteLater();
                     return;
                 }
+                emit finished(response);
+            }
+            else
+                internalError = true;
+            break;
+        }
+        case QS3::SetAcl:
+        {
+            QS3SetAclResponse *response = qobject_cast<QS3SetAclResponse*>(responseBase);
+            if (response)
+            {
+                response->succeeded = true;
                 emit finished(response);
             }
             else
@@ -196,7 +333,7 @@ void QS3Client::prepareRequest(QNetworkRequest *request, QString httpVerb)
 
     // Keep special amazon header keys and their values. These and only these need to be taken into account in the signing.
     QStringList keepKeys; keepKeys << "versioning" << "location" << "acl" << "torrent" << "lifecycle" << "versionid";
-    QString query = generateOrderedQuery(request->url().queryItems(), keepKeys);
+    QString query = QS3Helpers::generateOrderedQuery(request->url().queryItems(), keepKeys);
     if (!query.isEmpty())
         resource += query;
 
@@ -205,11 +342,13 @@ void QS3Client::prepareRequest(QNetworkRequest *request, QString httpVerb)
     foreach (QByteArray hdr, request->rawHeaderList())
         if (hdr.toLower().startsWith("x-amz-"))
             headers.append(hdr.toLower() + ":" + request->rawHeader(hdr) + "\n");
+            
+    QVariant contentType = request->header(QNetworkRequest::ContentTypeHeader);
 
     // Sign string.
     QString data = httpVerb + QS3Helpers::newline       // HTTP-Verb
                  + QS3Helpers::newline                  // Content-MD5
-                 + QS3Helpers::newline                  // Content-Type
+                 + (!contentType.isNull() ? contentType.toString() : "") + QS3Helpers::newline  // Content-Type
                  + timestamp + QS3Helpers::newline      // Date
                  + headers + resource;                  // CanonicalizedAmzHeaders + CanonicalizedResource
 
@@ -225,64 +364,12 @@ void QS3Client::prepareRequest(QNetworkRequest *request, QString httpVerb)
     request->setRawHeader("Authorization", authHeader.toUtf8());
 }
 
-void QS3Client::addOrReplaceQuery(QUrl *url, const QString &key, const QString &value)
-{
-    // Set the marker
-    if (url->hasQueryItem("marker"))
-    {
-        QS3QueryPairList query = url->queryItems();
-        for(int i=0; i<query.size(); ++i)
-        {
-            QS3QueryPair &pair = query[i];
-            if (pair.first == key)
-                pair.second = value;
-        }
-        url->setQueryItems(query);
-    }
-    else
-        url->addQueryItem(key, value);
-}
 QUrl QS3Client::generateUrl(QString key, const Q3SQueryParams &queryParams)
 {
     QString urlStr = "http://" + config_.bucket;
     urlStr += (config_.host.startsWith(".") ? config_.host : "." + config_.host);
     if (!key.startsWith("/"))
         key = "/" + key;
-    urlStr = QUrl(urlStr + key).toString() + generateOrderedQuery(queryParams);
+    urlStr = QUrl(urlStr + key).toString() + QS3Helpers::generateOrderedQuery(queryParams);
     return QUrl(urlStr);
-}
-
-QString QS3Client::generateOrderedQuery(QS3QueryPairList queryItems, const QStringList &keepKeys)
-{
-    if (queryItems.isEmpty())
-        return "";
-
-    qSort(queryItems.begin(), queryItems.end(), QS3Helpers::QueryItemCompare);
-    Q3SQueryParams queryParams;
-    foreach(QS3QueryPair queryPair, queryItems)
-    {
-        if (keepKeys.isEmpty())
-            queryParams[queryPair.first] = queryPair.second;
-        else if (keepKeys.contains(queryPair.first, Qt::CaseInsensitive))
-            queryParams[queryPair.first] = queryPair.second;
-    }
-    return generateOrderedQuery(queryParams);
-}
-
-QString QS3Client::generateOrderedQuery(const Q3SQueryParams &queryParams)
-{
-    if (queryParams.isEmpty())
-        return "";
-
-    QString query = "?";
-    foreach(QString queryKey, queryParams.keys())
-    {
-        if (queryParams[queryKey].isEmpty())
-            query += queryKey + "&";
-        else
-            query += queryKey + "=" + queryParams[queryKey] + "&";
-    }
-    if (query.endsWith("&"))
-        query = query.left(query.length()-1);
-    return query;
 }

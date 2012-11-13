@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QStringList>
+#include <QFile>
 
 QS3Tester::QS3Tester(const QStringList &params)
 {
@@ -17,15 +18,24 @@ QS3Tester::QS3Tester(const QStringList &params)
     client = new QS3Client(QS3Config(params[0], params[1], params[2]), this);
     connect(client, SIGNAL(finished(QS3ListObjectsResponse*)), SLOT(OnListObjectsRespose(QS3ListObjectsResponse*)));
     connect(client, SIGNAL(finished(QS3GetObjectResponse*)), SLOT(OnGetObjectRespose(QS3GetObjectResponse*)));
-    connect(client, SIGNAL(finished(QS3AclResponse*)), SLOT(OnAclRespose(QS3AclResponse*)));
+    connect(client, SIGNAL(finished(QS3PutObjectResponse*)), SLOT(OnPutObjectRespose(QS3PutObjectResponse*)));
+    connect(client, SIGNAL(finished(QS3GetAclResponse*)), SLOT(OnAclGetRespose(QS3GetAclResponse*)));
+    connect(client, SIGNAL(finished(QS3SetAclResponse*)), SLOT(OnAclSetRespose(QS3SetAclResponse*)));
     connect(client, SIGNAL(failed(QS3Response*, const QString&)), SLOT(OnFailed(QS3Response*, const QString&)));
     connect(client, SIGNAL(errorMessage(const QString&)), SLOT(OnErrorMessage(const QString&)));
     
     // List object
-    client->listObjects((params.size() > 3 ? params[3] : ""));
+    //client->listObjects((params.size() > 3 ? params[3] : ""));
     
-    // Get bucket root acl
-    client->getAcl();
+    // Get and set acl
+    //client->getAcl("avatars/aaaa.testfile");
+    //client->setCannedAcl("avatars/aaaa.testfile", QS3::BucketOwnerFullControl);
+     
+    // Put object
+    //QFile binary("C:/Work/admino-tundra/bin/data/assets/castle/Cube.028.mesh");
+    //client->put("avatars/test.mesh", &binary, QS3FileMetadata());
+    //QFile xml("C:/Work/admino-tundra/bin/data/assets/castle/CastleProject.xml");
+    //client->put("avatars/test3.xml", &xml, QS3FileMetadata("text/xml"), QS3::PublicRead);
 }
 
 QS3Tester::~QS3Tester()
@@ -68,10 +78,16 @@ void QS3Tester::OnGetObjectRespose(QS3GetObjectResponse *response)
     qDebug() << "[QS3Tester]:   GET completed" << response->url.toString(QUrl::RemoveQuery).toStdString().c_str() << QString("size=%1").arg(response->data.size()).toStdString().c_str();
 }
 
-void QS3Tester::OnAclRespose(QS3AclResponse *response)
+void QS3Tester::OnPutObjectRespose(QS3PutObjectResponse *response)
+{
+    qDebug() << "[QS3Tester]: PUT completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
+    qDebug() << "[QS3Tester]: Succeeded:" << response->succeeded;
+}
+
+void QS3Tester::OnAclGetRespose(QS3GetAclResponse *response)
 {
     qDebug() << "";
-    qDebug() << "[QS3Tester]: ACL completed" << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
+    qDebug() << "[QS3Tester]: ACL get completed" << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
     qDebug() << "[QS3Tester]:" << response->acl.toString();
     qDebug() << "[QS3Tester]:  Owner        :" << response->acl.ownerUser.toString();
     qDebug() << "[QS3Tester]:  Authenticated:" << response->acl.authenticatedUsers.toString();
@@ -79,6 +95,12 @@ void QS3Tester::OnAclRespose(QS3AclResponse *response)
     foreach(QS3AclPermissions permissions, response->acl.userPermissions)
         qDebug() << "[QS3Tester]:  User:        :" << permissions.toString();
     qDebug() << "";
+}
+
+void QS3Tester::OnAclSetRespose(QS3SetAclResponse *response)
+{
+    qDebug() << "[QS3Tester]: ACL set completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
+    qDebug() << "[QS3Tester]: Succeeded:" << response->succeeded;
 }
 
 void QS3Tester::OnFailed(QS3Response *response, const QString &message)

@@ -17,11 +17,26 @@ namespace QS3
 {
     enum RequestType
     {
-        GetObject = 0,
-        ListObjects,
-        Acl,
+        ListObjects = 0,
+        GetObject,
+        PutObject,
+        GetAcl,
+        SetAcl
+    };
+    
+    enum CannedAcl
+    {
+        NoCannedAcl = 0,
+        Private,
+        PublicRead,
+        PublicReadWrite,
+        AuthenticatedRead,
+        BucketOwnerRead,
+        BucketOwnerFullControl
     };
 }
+
+// QS3Config
 
 class QTS3SHARED_EXPORT QS3Config
 {
@@ -34,6 +49,19 @@ public:
     QS3Config(const QString &accessKey_, const QString &secredKey_, const QString &bucket_, const QString &host_ = "s3.amazonaws.com");
     QS3Config(const QS3Config &other);
     ~QS3Config();
+};
+
+// QS3FileMetaData
+
+class QTS3SHARED_EXPORT QS3FileMetadata
+{
+public:
+    QString contentType;
+    QString contentEncoding;
+    
+    QS3FileMetadata(const QString contentType_ = "binary/octet-stream", const QString &contentEncoding_ = "application/octet-stream");
+    QS3FileMetadata(const QS3FileMetadata &other);
+    ~QS3FileMetadata();
 };
 
 // QS3Object
@@ -123,7 +151,7 @@ protected:
 
 class QTS3SHARED_EXPORT QS3GetObjectResponse : public QS3Response
 {
-    Q_OBJECT
+Q_OBJECT
 
 public:
     QS3GetObjectResponse(const QUrl &url);
@@ -136,6 +164,23 @@ protected:
     void emitFinished();
 };
 
+// QS3PutObjectResponse
+
+class QTS3SHARED_EXPORT QS3PutObjectResponse : public QS3Response
+{
+Q_OBJECT
+
+public:
+    QS3PutObjectResponse(const QUrl &url);
+    bool succeeded;
+    
+signals:
+    void finished(QS3PutObjectResponse *response);
+
+protected:
+    void emitFinished();
+};
+
 // QSS3ListObjectsResponse
 
 class QTS3SHARED_EXPORT QS3ListObjectsResponse : public QS3Response
@@ -143,7 +188,7 @@ class QTS3SHARED_EXPORT QS3ListObjectsResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3ListObjectsResponse(const QUrl &url_);
+    QS3ListObjectsResponse(const QUrl &url);
     bool isTruncated;
     QS3ObjectList objects;
 
@@ -156,16 +201,33 @@ protected:
 
 // QS3AclResponse
 
-class QTS3SHARED_EXPORT QS3AclResponse : public QS3Response
+class QTS3SHARED_EXPORT QS3GetAclResponse : public QS3Response
 {
-    Q_OBJECT
+Q_OBJECT
 
 public:
-    QS3AclResponse(const QUrl &url_);
+    QS3GetAclResponse(const QUrl &url);
     QS3Acl acl;
 
 signals:
-    void finished(QS3AclResponse *response);
+    void finished(QS3GetAclResponse *response);
+
+protected:
+    void emitFinished();
+};
+
+// QS3SetAclResponse
+
+class QTS3SHARED_EXPORT QS3SetAclResponse : public QS3Response
+{
+Q_OBJECT
+
+public:
+    QS3SetAclResponse(const QUrl &url);
+    bool succeeded;
+
+signals:
+    void finished(QS3SetAclResponse *response);
 
 protected:
     void emitFinished();

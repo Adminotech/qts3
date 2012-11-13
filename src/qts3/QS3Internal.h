@@ -117,4 +117,79 @@ namespace QS3Helpers
         sha1 = QCryptographicHash::hash(workArray, QCryptographicHash::Sha1);
         return QString(sha1.toBase64());
     }
+    
+    static QByteArray cannedAclToHeader(QS3::CannedAcl cannedAcl)
+    {
+        switch(cannedAcl)
+        {
+            case QS3::Private:
+                return "private";
+            case QS3::PublicRead:
+                return "public-read";
+            case QS3::PublicReadWrite:
+                return "public-read-write";
+            case QS3::AuthenticatedRead:
+                return "authenticated-read";
+            case QS3::BucketOwnerRead:
+                return "bucket-owner-read";
+            case QS3::BucketOwnerFullControl:
+                return "bucket-owner-full-control";
+            default:
+                return "";
+        }
+        return "";
+    }
+    
+    static void addOrReplaceQuery(QUrl *url, const QString &key, const QString &value)
+    {
+        // Set the marker
+        if (url->hasQueryItem("marker"))
+        {
+            QS3QueryPairList query = url->queryItems();
+            for(int i=0; i<query.size(); ++i)
+            {
+                QS3QueryPair &pair = query[i];
+                if (pair.first == key)
+                    pair.second = value;
+            }
+            url->setQueryItems(query);
+        }
+        else
+            url->addQueryItem(key, value);
+    }
+
+    static QString generateOrderedQuery(const Q3SQueryParams &queryParams)
+    {
+        if (queryParams.isEmpty())
+            return "";
+
+        QString query = "?";
+        foreach(QString queryKey, queryParams.keys())
+        {
+            if (queryParams[queryKey].isEmpty())
+                query += queryKey + "&";
+            else
+                query += queryKey + "=" + queryParams[queryKey] + "&";
+        }
+        if (query.endsWith("&"))
+            query = query.left(query.length()-1);
+        return query;
+    }
+    
+    static QString generateOrderedQuery(QS3QueryPairList queryItems, const QStringList &keepKeys)
+    {
+        if (queryItems.isEmpty())
+            return "";
+
+        qSort(queryItems.begin(), queryItems.end(), QS3Helpers::QueryItemCompare);
+        Q3SQueryParams queryParams;
+        foreach(QS3QueryPair queryPair, queryItems)
+        {
+            if (keepKeys.isEmpty())
+                queryParams[queryPair.first] = queryPair.second;
+            else if (keepKeys.contains(queryPair.first, Qt::CaseInsensitive))
+                queryParams[queryPair.first] = queryPair.second;
+        }
+        return generateOrderedQuery(queryParams);
+    }
 }

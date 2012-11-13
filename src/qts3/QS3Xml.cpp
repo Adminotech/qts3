@@ -52,7 +52,7 @@ bool QS3Xml::parseListObjects(QS3ListObjectsResponse *response, const QByteArray
     return true;
 }
 
-bool QS3Xml::parseAclObjects(QS3AclResponse *response, const QByteArray &data)
+bool QS3Xml::parseAclObjects(QS3GetAclResponse *response, const QByteArray &data)
 {
     QDomDocument doc;
     if (!doc.setContent(data))
