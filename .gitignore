@@ -6,8 +6,31 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
+*.dll
 
 # Compiled Static libraries
 *.lai
 *.la
 *.a
+*.lib
+
+# Visual studio
+*.vcproj*
+*.sln
+*.ncb
+*.suo
+Debug/
+Release/
+
+# Qt
+*.cxx
+*.cxx_parameters
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+*.cmake
+
+# Output dirs
+bin/
+lib/
