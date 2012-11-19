@@ -222,6 +222,11 @@ QS3GetObjectResponse::QS3GetObjectResponse(const QString &key, const QUrl &url) 
 {
 }
 
+void QS3GetObjectResponse::downloadProgress(qint64 bytesReceived, qint64 bytesTotal)
+{
+    emit downloadProgress(this, bytesReceived, bytesTotal);
+}
+
 void QS3GetObjectResponse::emitFinished()
 {
     emit finished(this);
@@ -232,7 +237,11 @@ void QS3GetObjectResponse::emitFinished()
 QS3PutObjectResponse::QS3PutObjectResponse(const QString &key, const QUrl &url) :
     QS3Response(key, url, QS3::PutObject)
 {
+}
 
+void QS3PutObjectResponse::uploadProgress(qint64 bytesSent, qint64 bytesTotal)
+{
+    emit uploadProgress(this, bytesSent, bytesTotal);
 }
 
 void QS3PutObjectResponse::emitFinished()

@@ -247,8 +247,11 @@ signals:
 
     /// Reports the download progress. 
     /** @note bytesTotal may be -1 except when the upload finishes. */
-    void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
+    void downloadProgress(QS3GetObjectResponse *response, qint64 bytesReceived, qint64 bytesTotal);
 
+private slots:
+    void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
+    
 protected:
     void emitFinished();
 };
@@ -270,8 +273,11 @@ signals:
     
     /// Reports the upload progress. 
     /** @note bytesTotal may be -1 except when the upload finishes. */
-    void uploadProgress(qint64 bytesSent, qint64 bytesTotal);
+    void uploadProgress(QS3PutObjectResponse *response, qint64 bytesSent, qint64 bytesTotal);
 
+private slots:
+    void uploadProgress(qint64 bytesSent, qint64 bytesTotal);
+    
 protected:
     void emitFinished();
 };

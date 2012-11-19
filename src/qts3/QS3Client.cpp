@@ -171,7 +171,7 @@ QS3GetObjectResponse *QS3Client::get(const QString &key)
     QNetworkReply *reply = network_->get(request);
 
     QS3GetObjectResponse *response = new QS3GetObjectResponse(info.first, request.url());
-    connect(reply, SIGNAL(downloadProgress(qint64, qint64)), response, SIGNAL(downloadProgress(qint64, qint64)));
+    connect(reply, SIGNAL(downloadProgress(qint64, qint64)), response, SLOT(downloadProgress(qint64, qint64)));
     requests_[reply] = response;
     
     return response;
@@ -252,7 +252,7 @@ QS3PutObjectResponse *QS3Client::put(const QString &key, const QByteArray &data,
     QNetworkReply *reply = network_->put(request, data);
 
     QS3PutObjectResponse *response = new QS3PutObjectResponse(info.first, request.url());
-    connect(reply, SIGNAL(uploadProgress(qint64, qint64)), response, SIGNAL(uploadProgress(qint64, qint64)));
+    connect(reply, SIGNAL(uploadProgress(qint64, qint64)), response, SLOT(uploadProgress(qint64, qint64)));
     requests_[reply] = response;
 
     return response;
@@ -290,7 +290,7 @@ QS3PutObjectResponse *QS3Client::createFolder(const QString &key, QS3::CannedAcl
     QNetworkReply *reply = network_->put(request, "");
 
     QS3PutObjectResponse *response = new QS3PutObjectResponse(info.first, request.url());
-    connect(reply, SIGNAL(uploadProgress(qint64, qint64)), response, SIGNAL(uploadProgress(qint64, qint64)));
+    connect(reply, SIGNAL(uploadProgress(qint64, qint64)), response, SLOT(uploadProgress(qint64, qint64)));
     requests_[reply] = response;
 
     return response;
