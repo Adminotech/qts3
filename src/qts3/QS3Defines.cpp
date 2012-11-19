@@ -164,10 +164,12 @@ QString QS3Acl::toString() const
 
 // QS3Response
 
-QS3Response::QS3Response(const QUrl &url_, QS3::RequestType type_) :
+QS3Response::QS3Response(const QString &key_, const QUrl &url_, QS3::RequestType type_) :
+    succeeded(false),
+    httpStatusCode(0),
+    key(key_),
     url(url_),
-    type(type_),
-    succeeded(false)
+    type(type_)
 {
 }
 
@@ -177,9 +179,10 @@ QS3Response::~QS3Response()
 
 // QS3ListObjectsResponse
 
-QS3ListObjectsResponse::QS3ListObjectsResponse(const QUrl &url) :
-    QS3Response(url, QS3::ListObjects),
-    isTruncated(false)
+QS3ListObjectsResponse::QS3ListObjectsResponse(const QString &key, const QUrl &url, const QString &prefix_) :
+    QS3Response(key, url, QS3::ListObjects),
+    isTruncated(false),
+    prefix(prefix_)
 {
 }
 
@@ -190,8 +193,8 @@ void QS3ListObjectsResponse::emitFinished()
 
 // QS3DeleteObjectResponse
 
-QS3RemoveObjectResponse::QS3RemoveObjectResponse(const QUrl &url) :
-    QS3Response(url, QS3::RemoveObject)
+QS3RemoveObjectResponse::QS3RemoveObjectResponse(const QString &key, const QUrl &url) :
+    QS3Response(key, url, QS3::RemoveObject)
 {
 }
 
@@ -202,8 +205,8 @@ void QS3RemoveObjectResponse::emitFinished()
 
 // QS3CopyObjectResponse
 
-QS3CopyObjectResponse::QS3CopyObjectResponse(const QUrl &url) :
-    QS3Response(url, QS3::CopyObject)
+QS3CopyObjectResponse::QS3CopyObjectResponse(const QString &key, const QUrl &url) :
+    QS3Response(key, url, QS3::CopyObject)
 {
 }
 
@@ -214,8 +217,8 @@ void QS3CopyObjectResponse::emitFinished()
 
 // QS3GetObjectResponse
 
-QS3GetObjectResponse::QS3GetObjectResponse(const QUrl &url) :
-    QS3Response(url, QS3::GetObject)
+QS3GetObjectResponse::QS3GetObjectResponse(const QString &key, const QUrl &url) :
+    QS3Response(key, url, QS3::GetObject)
 {
 }
 
@@ -226,8 +229,8 @@ void QS3GetObjectResponse::emitFinished()
 
 // QS3PutObjectResponse
 
-QS3PutObjectResponse::QS3PutObjectResponse(const QUrl &url) :
-    QS3Response(url, QS3::PutObject)
+QS3PutObjectResponse::QS3PutObjectResponse(const QString &key, const QUrl &url) :
+    QS3Response(key, url, QS3::PutObject)
 {
 
 }
@@ -239,8 +242,8 @@ void QS3PutObjectResponse::emitFinished()
 
 // QS3GetAclResponse
 
-QS3GetAclResponse::QS3GetAclResponse(const QUrl &url) :
-    QS3Response(url, QS3::GetAcl)
+QS3GetAclResponse::QS3GetAclResponse(const QString &key, const QUrl &url) :
+    QS3Response(key, url, QS3::GetAcl)
 {
 }
 
@@ -251,8 +254,8 @@ void QS3GetAclResponse::emitFinished()
 
 // QS3SetAclResponse
 
-QS3SetAclResponse::QS3SetAclResponse(const QUrl &url) :
-    QS3Response(url, QS3::SetAcl)
+QS3SetAclResponse::QS3SetAclResponse(const QString &key, const QUrl &url) :
+    QS3Response(key, url, QS3::SetAcl)
 {
 }
 

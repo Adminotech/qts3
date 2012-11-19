@@ -8,10 +8,12 @@
 #include <QByteArray>
 #include <QUrl>
 #include <QHash>
+#include <QPair>
 
 typedef QHash<QString, QString> Q3SQueryParams;
 typedef QPair<QString, QString> QS3QueryPair;
 typedef QList<QS3QueryPair > QS3QueryPairList;
+typedef QPair<QString, QUrl> QS3UrlPair;
 
 namespace QS3
 {
@@ -139,13 +141,26 @@ Q_OBJECT
 friend class QS3Client;
 
 public:
-    QS3Response(const QUrl &url_, QS3::RequestType type_);
+    QS3Response(const QString &key_, const QUrl &url_, QS3::RequestType type_);
     virtual ~QS3Response();
 
-    QS3::RequestType type;
-    QUrl url;
+    /// Did request completed succesfully.
     bool succeeded;
+    
+    /// Error string if request failed.
     QString error;
+    
+    /// Request Amason S3 object key.
+    QString key;
+    
+    /// Request full url. Includes all query parameters.
+    QUrl url;
+    
+    /// HTTP response status code.
+    int httpStatusCode;
+    
+    /// Type of the request.
+    QS3::RequestType type;
 
 protected:
     /// Each inheriting class needs to implement this function
@@ -160,8 +175,10 @@ class QTS3SHARED_EXPORT QS3ListObjectsResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3ListObjectsResponse(const QUrl &url);
+    QS3ListObjectsResponse(const QString &key, const QUrl &url, const QString &prefix_);
+    
     bool isTruncated;
+    QString prefix;
     QS3ObjectList objects;
 
 signals:
@@ -181,7 +198,7 @@ class QTS3SHARED_EXPORT QS3RemoveObjectResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3RemoveObjectResponse(const QUrl &url);
+    QS3RemoveObjectResponse(const QString &key, const QUrl &url);
 
 signals:
     /// Request response finished.
@@ -200,7 +217,7 @@ class QTS3SHARED_EXPORT QS3CopyObjectResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3CopyObjectResponse(const QUrl &url);
+    QS3CopyObjectResponse(const QString &key, const QUrl &url);
 
 signals:
     /// Request response finished.
@@ -219,7 +236,7 @@ class QTS3SHARED_EXPORT QS3GetObjectResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3GetObjectResponse(const QUrl &url);
+    QS3GetObjectResponse(const QString &key, const QUrl &url);
     QByteArray data;
 
 signals:
@@ -227,6 +244,10 @@ signals:
     /** This signal will fire if the request succeeded and
         if it fails. Check succeeded and error members for the status. */
     void finished(QS3GetObjectResponse *response);
+
+    /// Reports the download progress. 
+    /** @note bytesTotal may be -1 except when the upload finishes. */
+    void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
 
 protected:
     void emitFinished();
@@ -239,13 +260,17 @@ class QTS3SHARED_EXPORT QS3PutObjectResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3PutObjectResponse(const QUrl &url);
+    QS3PutObjectResponse(const QString &key, const QUrl &url);
     
 signals:
     /// Request response finished.
     /** This signal will fire if the request succeeded and
         if it fails. Check succeeded and error members for the status. */
     void finished(QS3PutObjectResponse *response);
+    
+    /// Reports the upload progress. 
+    /** @note bytesTotal may be -1 except when the upload finishes. */
+    void uploadProgress(qint64 bytesSent, qint64 bytesTotal);
 
 protected:
     void emitFinished();
@@ -258,7 +283,7 @@ class QTS3SHARED_EXPORT QS3GetAclResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3GetAclResponse(const QUrl &url);
+    QS3GetAclResponse(const QString &key, const QUrl &url);
     QS3Acl acl;
 
 signals:
@@ -278,7 +303,7 @@ class QTS3SHARED_EXPORT QS3SetAclResponse : public QS3Response
 Q_OBJECT
 
 public:
-    QS3SetAclResponse(const QUrl &url);
+    QS3SetAclResponse(const QString &key, const QUrl &url);
 
 signals:
     /// Request response finished.

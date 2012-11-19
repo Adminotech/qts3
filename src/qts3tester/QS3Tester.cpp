@@ -145,7 +145,7 @@ void QS3Tester::OnAclSetRespose(QS3SetAclResponse *response)
 void QS3Tester::OnFailed(QS3Response *response, const QString &message)
 {
     // Already printed in individual handlers
-    //qDebug() << "[QS3Tester] Error:" << response->url.toString(QUrl::RemoveQuery).toStdString().c_str() << message.toStdString().c_str();
+    qDebug() << "[QS3Tester] Error:" << response->url.toString(QUrl::RemoveQuery).toStdString().c_str() << endl << message.toStdString().c_str();
 }
 
 void QS3Tester::OnErrorMessage(const QString &message)

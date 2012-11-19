@@ -72,17 +72,29 @@ public slots:
     /** @param QString key to upload.
         @param QFile file to upload.
         @param QS3FileMetadata File metadata.
-        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default no ACL is used.
+        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default QS3::BucketOwnerFullControl is used.
+        @return QS3PutObjectResponse response object.
         @note Returned response can be null if invalid input params were given. */
-    QS3PutObjectResponse *put(const QString &key, QFile *file, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl = QS3::NoCannedAcl);
+    QS3PutObjectResponse *put(const QString &key, QFile *file, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl = QS3::BucketOwnerFullControl);
     
     /// Put new object to bucket with key and file data.
     /** @param QString key to upload.
         @param QByteArray data to upload.
         @param QS3FileMetadata Metadata.
-        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default no ACL is used.
+        @param QS3::CannedAcl Applied canned ACL to uploaded file. By default QS3::BucketOwnerFullControl is used.
+        @return QS3PutObjectResponse response object.
         @note Returned response can be null if invalid input params were given. */
-    QS3PutObjectResponse *put(const QString &key, const QByteArray &data, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl = QS3::NoCannedAcl);
+    QS3PutObjectResponse *put(const QString &key, const QByteArray &data, const QS3FileMetadata &metadata, QS3::CannedAcl cannedAcl = QS3::BucketOwnerFullControl);
+    
+    /// Create new folder to storage. 
+    /** You must be sure this folder does not already exist. If it exists the resulted behaviour is undefined.
+        @param QString key. Folder path, must end with "/" or will be rejected. 
+        @param QS3::CannedAcl Applied canned ACL to the created folder. By default QS3::BucketOwnerFullControl is used. 
+        @return QS3PutObjectResponse response object.
+        @note Amazon S3 will automatically create folders if you upload a file that has non-existing folders in the key.
+        You don't have to use this to ensure the full folder path exists.
+        @note Returned response can be null if invalid input params were given. */
+    QS3PutObjectResponse *createFolder(const QString &key, QS3::CannedAcl cannedAcl = QS3::BucketOwnerFullControl);
     
     /// Get object ACL for key.
     /** @param QString key.
@@ -155,7 +167,7 @@ private:
     void prepareRequest(QNetworkRequest *request, QString httpVerb);
     
     /// Generates proper url with query parameters.
-    QUrl generateUrl(QString key, const Q3SQueryParams &queryParams = Q3SQueryParams());
+    QS3UrlPair generateUrl(QString key, const Q3SQueryParams &queryParams = Q3SQueryParams());
     
     QS3Config config_;
     QNetworkAccessManager *network_;

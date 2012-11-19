@@ -57,11 +57,12 @@ QS3ListObjectsResponse *QS3Client::listObjects(const QString &prefix, const QStr
     if (!delimiter.isEmpty()) params["delimiter"] = delimiter;
     if (maxObjects > 0) params["max-keys"] = QString::number(maxObjects);
 
-    QNetworkRequest request(generateUrl(QS3::ROOT_PATH, params));
+    QS3UrlPair info = generateUrl(QS3::ROOT_PATH, params);
+    QNetworkRequest request(info.second);
     prepareRequest(&request, "GET");
     QNetworkReply *reply = network_->get(request);
 
-    QS3ListObjectsResponse *response = new QS3ListObjectsResponse(request.url());
+    QS3ListObjectsResponse *response = new QS3ListObjectsResponse(info.first, request.url(), prefix);
     requests_[reply] = response;
 
     return response;
@@ -86,11 +87,12 @@ QS3RemoveObjectResponse *QS3Client::remove(const QString &key)
         return 0;
     }
 
-    QNetworkRequest request(generateUrl(key));
+    QS3UrlPair info = generateUrl(key);
+    QNetworkRequest request(info.second);
     prepareRequest(&request, "DELETE");
     QNetworkReply *reply = network_->deleteResource(request);
 
-    QS3RemoveObjectResponse *response = new QS3RemoveObjectResponse(request.url());
+    QS3RemoveObjectResponse *response = new QS3RemoveObjectResponse(info.first, request.url());
     requests_[reply] = response;
 
     return response;
@@ -135,7 +137,8 @@ QS3CopyObjectResponse *QS3Client::copy(const QString &sourceBucket, const QStrin
     source += sourceKey;
 
     // Setup headers
-    QNetworkRequest request(generateUrl(destinationKey));
+    QS3UrlPair info = generateUrl(destinationKey);
+    QNetworkRequest request(info.second);
     if (!aclHeader.isEmpty())
         request.setRawHeader(QS3::AMAZON_HEADER_ACL, aclHeader);
     request.setRawHeader(QS3::AMAZON_HEADER_COPY_SOURCE, source.toUtf8());
@@ -143,7 +146,7 @@ QS3CopyObjectResponse *QS3Client::copy(const QString &sourceBucket, const QStrin
     prepareRequest(&request, "PUT");
     QNetworkReply *reply = network_->put(request, "");
 
-    QS3CopyObjectResponse *response = new QS3CopyObjectResponse(request.url());
+    QS3CopyObjectResponse *response = new QS3CopyObjectResponse(info.first, request.url());
     requests_[reply] = response;
 
     return response;
@@ -162,11 +165,13 @@ QS3GetObjectResponse *QS3Client::get(const QString &key)
         return 0;
     }
 
-    QNetworkRequest request(generateUrl(key));
+    QS3UrlPair info = generateUrl(key);
+    QNetworkRequest request(info.second);
     prepareRequest(&request, "GET");
     QNetworkReply *reply = network_->get(request);
 
-    QS3GetObjectResponse *response = new QS3GetObjectResponse(request.url());
+    QS3GetObjectResponse *response = new QS3GetObjectResponse(info.first, request.url());
+    connect(reply, SIGNAL(downloadProgress(qint64, qint64)), response, SIGNAL(downloadProgress(qint64, qint64)));
     requests_[reply] = response;
     
     return response;
@@ -181,7 +186,7 @@ QS3PutObjectResponse *QS3Client::put(const QString &key, QFile *file, const QS3F
     }
     if (key.trimmed().endsWith("/"))
     {
-        qDebug() << "QS3Client::put() Error: Key cannot end with \"/\". Cannot put folders.";
+        qDebug() << "QS3Client::put() Error: Key cannot end with \"/\". Cannot put folders, use QS3Client::createFolder.";
         return 0;
     }
 
@@ -215,7 +220,7 @@ QS3PutObjectResponse *QS3Client::put(const QString &key, const QByteArray &data,
     }
     if (key.trimmed().endsWith("/"))
     {
-        qDebug() << "QS3Client::put() Error: Key cannot end with \"/\". Cannot put folders.";
+        qDebug() << "QS3Client::put() Error: Key cannot end with \"/\". Cannot put folders, use QS3Client::createFolder.";
         return 0;
     }
     if (data.isEmpty())
@@ -233,7 +238,8 @@ QS3PutObjectResponse *QS3Client::put(const QString &key, const QByteArray &data,
     }
 
     // Setup headers
-    QNetworkRequest request(generateUrl(key));
+    QS3UrlPair info = generateUrl(key);
+    QNetworkRequest request(info.second);
     request.setHeader(QNetworkRequest::ContentLengthHeader, data.size());
     if (!metadata.contentType.isEmpty())
         request.setHeader(QNetworkRequest::ContentTypeHeader, metadata.contentType);
@@ -245,7 +251,46 @@ QS3PutObjectResponse *QS3Client::put(const QString &key, const QByteArray &data,
     prepareRequest(&request, "PUT");
     QNetworkReply *reply = network_->put(request, data);
 
-    QS3PutObjectResponse *response = new QS3PutObjectResponse(request.url());
+    QS3PutObjectResponse *response = new QS3PutObjectResponse(info.first, request.url());
+    connect(reply, SIGNAL(uploadProgress(qint64, qint64)), response, SIGNAL(uploadProgress(qint64, qint64)));
+    requests_[reply] = response;
+
+    return response;
+}
+
+QS3PutObjectResponse *QS3Client::createFolder(const QString &key, QS3::CannedAcl cannedAcl)
+{
+    if (key.trimmed().isEmpty() || key.trimmed() == QS3::ROOT_PATH)
+    {
+        qDebug() << "QS3Client::createFolder() Error: Cannot be called with empty or \"/\" key.";
+        return 0;
+    }
+    if (!key.trimmed().endsWith("/"))
+    {
+        qDebug() << "QS3Client::createFolder() Error: Key must end with \"/\" when creating a folder.";
+        return 0;
+    }
+
+    QByteArray aclHeader = "";
+    if (cannedAcl != QS3::NoCannedAcl)
+    {
+        aclHeader = QS3::cannedAclToHeader(cannedAcl);
+        if (aclHeader.isEmpty())
+            qDebug() << "QS3Client::createFolder() Warning: Input QS3::CannedAcl is invalid:" << cannedAcl;
+    }
+
+    // Setup headers
+    QS3UrlPair info = generateUrl(key);
+    QNetworkRequest request(info.second);
+    request.setHeader(QNetworkRequest::ContentLengthHeader, 0);
+    if (!aclHeader.isEmpty())
+        request.setRawHeader(QS3::AMAZON_HEADER_ACL, aclHeader);
+
+    prepareRequest(&request, "PUT");
+    QNetworkReply *reply = network_->put(request, "");
+
+    QS3PutObjectResponse *response = new QS3PutObjectResponse(info.first, request.url());
+    connect(reply, SIGNAL(uploadProgress(qint64, qint64)), response, SIGNAL(uploadProgress(qint64, qint64)));
     requests_[reply] = response;
 
     return response;
@@ -256,11 +301,12 @@ QS3GetAclResponse *QS3Client::getAcl(const QString &key)
     Q3SQueryParams params;
     params["acl"] = "";
     
-    QNetworkRequest request(generateUrl(key, params));
+    QS3UrlPair info = generateUrl(key, params);
+    QNetworkRequest request(info.second);
     prepareRequest(&request, "GET");
     QNetworkReply *reply = network_->get(request);
 
-    QS3GetAclResponse *response = new QS3GetAclResponse(request.url());
+    QS3GetAclResponse *response = new QS3GetAclResponse(info.first, request.url());
     requests_[reply] = response;
     
     return response;
@@ -284,12 +330,13 @@ QS3SetAclResponse *QS3Client::setCannedAcl(const QString &key, QS3::CannedAcl ca
     Q3SQueryParams params;
     params["acl"] = "";
 
-    QNetworkRequest request(generateUrl(key, params));
+    QS3UrlPair info = generateUrl(key, params);
+    QNetworkRequest request(info.second);
     request.setRawHeader(QS3::AMAZON_HEADER_ACL, aclHeader);
     prepareRequest(&request, "PUT");
     QNetworkReply *reply = network_->put(request, "");
 
-    QS3SetAclResponse *response = new QS3SetAclResponse(request.url());
+    QS3SetAclResponse *response = new QS3SetAclResponse(info.first, request.url());
     requests_[reply] = response;
 
     return response;
@@ -315,6 +362,7 @@ void QS3Client::onReply(QNetworkReply *reply)
         emit errorMessage("Base response is null for " + cleanUrl);
         return;
     }
+    responseBase->httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     if (reply->error() != QNetworkReply::NoError)
     {
         responseBase->succeeded = false;
@@ -478,12 +526,12 @@ void QS3Client::prepareRequest(QNetworkRequest *request, QString httpVerb)
     request->setRawHeader(QS3::STANDARD_HEADER_AUTHORIZATION, authHeader.toUtf8());
 }
 
-QUrl QS3Client::generateUrl(QString key, const Q3SQueryParams &queryParams)
+QS3UrlPair QS3Client::generateUrl(QString key, const Q3SQueryParams &queryParams)
 {
     QString urlStr = "http://" + config_.bucket;
     urlStr += (config_.host.startsWith(".") ? config_.host : "." + config_.host);
     if (!key.startsWith(QS3::ROOT_PATH))
         key = QS3::ROOT_PATH + key;
     urlStr = QUrl(urlStr + key).toString() + QS3::generateOrderedQuery(queryParams);
-    return QUrl(urlStr);
+    return QS3UrlPair(key, QUrl(urlStr));
 }
