@@ -151,7 +151,7 @@ namespace QS3
     static void addOrReplaceQuery(QUrl *url, const QString &key, const QString &value)
     {
         // Set the marker
-        if (url->hasQueryItem("marker"))
+        if (url->hasQueryItem(key))
         {
             QS3QueryPairList query = url->queryItems();
             for(int i=0; i<query.size(); ++i)
