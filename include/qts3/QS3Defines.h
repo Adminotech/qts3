@@ -45,12 +45,25 @@ namespace QS3
 class QTS3SHARED_EXPORT QS3Config
 {
 public:
+    enum S3EndPoint
+    {
+        S3_DEFAULT,         // s3.amazonaws.com
+        US_WEST_1,          // s3-us-west-1.amazonaws.com
+        US_WEST_2,          // s3-us-west-2.amazonaws.com
+        SA_EAST_1,          // s3.sa-east-1.amazonaws.com
+        EU_WEST_1,          // s3-eu-west-1.amazonaws.com
+        AP_SOUTHEAST_1,     // s3-ap-southeast-1.amazonaws.com
+        AP_SOUTHEAST_2,     // s3-ap-southeast-2.amazonaws.com
+        AP_NORTHEAST_1,     // s3-ap-northeast-1.amazonaws.com
+    };
+    
     QString accessKey;
     QString secredKey;
     QString host;
     QString bucket;
+    S3EndPoint endpoint;
 
-    QS3Config(const QString &accessKey_, const QString &secredKey_, const QString &bucket_, const QString &host_ = "s3.amazonaws.com");
+    QS3Config(const QString &accessKey_, const QString &secredKey_, const QString &bucket_, S3EndPoint endpoint_);
     QS3Config(const QS3Config &other);
     ~QS3Config();
 };

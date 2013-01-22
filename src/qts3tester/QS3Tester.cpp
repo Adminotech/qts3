@@ -15,7 +15,7 @@ QS3Tester::QS3Tester(const QStringList &params)
         return; 
     }
     
-    client = new QS3Client(QS3Config(params[0], params[1], params[2]), this);
+    client = new QS3Client(QS3Config(params[0], params[1], params[2], QS3Config::S3_DEFAULT), this);
     connect(client, SIGNAL(finished(QS3ListObjectsResponse*)), SLOT(OnListObjectsRespose(QS3ListObjectsResponse*)));
     connect(client, SIGNAL(finished(QS3RemoveObjectResponse*)), SLOT(OnRemoveObjectRespose(QS3RemoveObjectResponse*)));
     connect(client, SIGNAL(finished(QS3CopyObjectResponse*)), SLOT(OnCopyObjectRespose(QS3CopyObjectResponse*)));

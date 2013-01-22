@@ -3,12 +3,28 @@
 
 // QS3Config
 
-QS3Config::QS3Config(const QString &accessKey_, const QString &secredKey_, const QString &bucket_, const QString &host_) :
+QS3Config::QS3Config(const QString &accessKey_, const QString &secredKey_, const QString &bucket_, const S3EndPoint endpoint_) :
     accessKey(accessKey_),
     secredKey(secredKey_),
-    host(host_),
-    bucket(bucket_)
+    bucket(bucket_),
+    endpoint(endpoint_),
+    host("s3.amazonaws.com")
 {
+    if (endpoint == US_WEST_1)
+        host = "s3-us-west-1.amazonaws.com";
+    else if (endpoint == US_WEST_2)
+        host = "s3-us-west-2.amazonaws.com";
+    else if (endpoint == SA_EAST_1)
+        host = "s3.sa-east-1.amazonaws.com";
+    else if (endpoint == EU_WEST_1)
+        host = "s3-eu-west-1.amazonaws.com";
+    else if (endpoint == AP_SOUTHEAST_1)
+        host = "s3-ap-southeast-1.amazonaws.com";
+    else if (endpoint == AP_SOUTHEAST_2)
+        host = "s3-ap-southeast-2.amazonaws.com";
+    else if (endpoint == AP_NORTHEAST_1)
+        host = "s3-ap-northeast-1.amazonaws.com";
+
     if (bucket.startsWith("/"))
         bucket = bucket.right(bucket.length()-1);
 }
@@ -23,6 +39,7 @@ QS3Config::QS3Config(const QS3Config &other)
     secredKey = other.secredKey;
     host = other.host;
     bucket = other.bucket;
+    endpoint = other.endpoint;
 }
 
 // QS3FileMetaData
