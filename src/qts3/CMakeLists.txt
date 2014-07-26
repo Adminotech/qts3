@@ -17,10 +17,14 @@ add_library (${TARGET_NAME} SHARED ${CPP_FILES} ${H_FILES} ${MOC_SRCS})
 target_link_libraries (${TARGET_NAME} ${QT_LIBRARIES})
 
 # Output
+set (DYNAMIC_DIR bin)
+if (NOT MSVC)
+	set (DYNAMIC_DIR lib)
+endif()
 
 set_target_properties (${TARGET_NAME} PROPERTIES DEBUG_POSTFIX d) 
 set_target_properties (${TARGET_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_DIR}/lib)
-set_target_properties (${TARGET_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_DIR}/bin)
+set_target_properties (${TARGET_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_DIR}/${DYNAMIC_DIR})
 set_target_properties (${TARGET_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_DIR}/bin)
 
 if (MSVC)
