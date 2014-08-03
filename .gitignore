@@ -21,6 +21,7 @@
 *.suo
 Debug/
 Release/
+RelWithDebInfo/
 
 # Qt
 *.cxx
@@ -30,7 +31,11 @@ Release/
 CMakeCache.txt
 CMakeFiles/
 *.cmake
+INSTALL.dir
+src/*/*.dir
+install_manifest.txt
 
 # Output dirs
 bin/
 lib/
+build/
