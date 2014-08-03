@@ -189,14 +189,9 @@ bool QS3Error::isEmpty() const
 
 QString QS3Error::toString() const
 {
-    // Internal or Qt network error but no S3 error.
-    if (!error.isEmpty() && code.isEmpty() && message.isEmpty())
-        return error;
-    // S3 error present, only print it.
-    else if (code.isEmpty() && message.isEmpty())
-        return QString("Code: %1 Message: %2").arg(code).arg(message);
-    // Print everything we have.
-    return QString("%1 Code: %2 Message: %3").arg(error).arg(code).arg(message);
+    if (!message.isEmpty() || !code.isEmpty())
+        return QString("%1 Error code: %2").arg(message).arg(code);
+    return QString("%1. Message: %2 Error code: %3").arg(error).arg(message).arg(code);
 }
 
 // QS3Response
