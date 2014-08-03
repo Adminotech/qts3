@@ -21,5 +21,5 @@ set (QT_LIBRARIES ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARY} ${QT_QTXML_LIBRAR
 
 add_subdirectory (src/qts3)
 if (QTS3_BUILD_TESTER)
-	add_subdirectory (src/qts3tester)
+    add_subdirectory (src/qts3tester)
 endif()

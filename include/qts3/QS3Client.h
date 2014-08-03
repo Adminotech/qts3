@@ -147,9 +147,9 @@ signals:
     /** @note Do not store the emitted pointer. It will be automatically destroyed. */
     void finished(QS3SetAclResponse *response);
     
-	/** Response failed with a generic error message (about network error).
-		See QS3Response::error for a more detailed error object (about Amazon S3 error).
-		@note Do not store the emitted pointer. It will be automatically destroyed. */
+    /** Response failed with a generic error message (about network error).
+        See QS3Response::error for a more detailed error object (about Amazon S3 error).
+        @note Do not store the emitted pointer. It will be automatically destroyed. */
     void failed(QS3Response *response, const QString &message);
     
     /// Internal errors in the case of fatal failure eg. could not internally map request to response.

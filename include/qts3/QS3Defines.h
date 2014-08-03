@@ -147,24 +147,24 @@ public:
 
 /// QS3Error
 /** Collects data from the Amazon S3 error response, see more from
-	http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html */
+    http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html */
 class QTS3SHARED_EXPORT QS3Error
 {
 public:
-	/// S3 error spec
-	QString code;
-	QString message;
-	QString requestId;
-	QString resource;
+    /// S3 error spec
+    QString code;
+    QString message;
+    QString requestId;
+    QString resource;
 
-	/// Generic internal or Qt network error.
-	QString error;
+    /// Generic internal or Qt network error.
+    QString error;
 
-	/// Returns true if there is no error.
-	bool isEmpty() const;
+    /// Returns true if there is no error.
+    bool isEmpty() const;
 
-	/// Returns formatted printable string for error code and message.
-	QString toString() const;
+    /// Returns formatted printable string for error code and message.
+    QString toString() const;
 };
 
 /// QS3Response
@@ -182,8 +182,8 @@ public:
     /// Did request completed succesfully.
     bool succeeded;
     
-	/// S3 error object. For network error see QS3Error::networkError.
-	QS3Error error;
+    /// S3 error object. For network error see QS3Error::networkError.
+    QS3Error error;
     
     /// Request Amason S3 object key.
     QString key;

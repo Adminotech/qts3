@@ -365,11 +365,11 @@ void QS3Client::onReply(QNetworkReply *reply)
     responseBase->httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     if (reply->error() != QNetworkReply::NoError)
     {
-		QString errorParseError;
-		if (!QS3Xml::parseError(responseBase->error, reply->readAll(), errorParseError))
-			qDebug() << "Failed to parse error response to QS3Error:" << errorParseError;
+        QString errorParseError;
+        if (!QS3Xml::parseError(responseBase->error, reply->readAll(), errorParseError))
+            qDebug() << "Failed to parse error response to QS3Error:" << errorParseError;
 
-		responseBase->succeeded = false;
+        responseBase->succeeded = false;
         responseBase->error.error = reply->errorString();
         emit failed(responseBase, responseBase->error.error);
         responseBase->emitFinished();
@@ -483,7 +483,7 @@ void QS3Client::onReply(QNetworkReply *reply)
     if (errors)
     {
         responseBase->succeeded = false;
-		responseBase->error.error = errorMessage;
+        responseBase->error.error = errorMessage;
         emit failed(responseBase, responseBase->error.error);
     }
 
