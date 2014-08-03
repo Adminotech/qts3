@@ -40,7 +40,7 @@ namespace QS3
     };
 }
 
-// QS3Config
+/// QS3Config
 
 class QTS3SHARED_EXPORT QS3Config
 {
@@ -68,7 +68,7 @@ public:
     ~QS3Config();
 };
 
-// QS3FileMetaData
+/// QS3FileMetaData
 
 class QTS3SHARED_EXPORT QS3FileMetadata
 {
@@ -81,7 +81,7 @@ public:
     ~QS3FileMetadata();
 };
 
-// QS3Object
+/// QS3Object
 
 class QTS3SHARED_EXPORT QS3Object
 {
@@ -101,7 +101,7 @@ public:
 };
 typedef QList<QS3Object> QS3ObjectList;
 
-// QS3AclPermissions
+/// QS3AclPermissions
 
 class QTS3SHARED_EXPORT QS3AclPermissions
 {
@@ -121,7 +121,7 @@ public:
     QString toString() const;
 };
 
-// QS3Acl
+/// QS3Acl
 
 class QTS3SHARED_EXPORT QS3Acl
 {
@@ -145,7 +145,29 @@ public:
     QString toString() const;
 };
 
-// QSS3Response
+/// QS3Error
+/** Collects data from the Amazon S3 error response, see more from
+	http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html */
+class QTS3SHARED_EXPORT QS3Error
+{
+public:
+	/// S3 error spec
+	QString code;
+	QString message;
+	QString requestId;
+	QString resource;
+
+	/// Generic internal or Qt network error.
+	QString error;
+
+	/// Returns true if there is no error.
+	bool isEmpty() const;
+
+	/// Returns formatted printable string for error code and message.
+	QString toString() const;
+};
+
+/// QS3Response
 
 class QTS3SHARED_EXPORT QS3Response : public QObject
 {
@@ -160,8 +182,8 @@ public:
     /// Did request completed succesfully.
     bool succeeded;
     
-    /// Error string if request failed.
-    QString error;
+	/// S3 error object. For network error see QS3Error::networkError.
+	QS3Error error;
     
     /// Request Amason S3 object key.
     QString key;
@@ -181,7 +203,7 @@ protected:
     virtual void emitFinished() = 0;
 };
 
-// QSS3ListObjectsResponse
+/// QS3ListObjectsResponse
 
 class QTS3SHARED_EXPORT QS3ListObjectsResponse : public QS3Response
 {
@@ -204,7 +226,7 @@ protected:
     void emitFinished();
 };
 
-// QS3RemoveObjectResponse
+/// QS3RemoveObjectResponse
 
 class QTS3SHARED_EXPORT QS3RemoveObjectResponse : public QS3Response
 {
@@ -223,7 +245,7 @@ protected:
     void emitFinished();
 };
 
-// QS3CopyObjectResponse
+/// QS3CopyObjectResponse
 
 class QTS3SHARED_EXPORT QS3CopyObjectResponse : public QS3Response
 {
@@ -242,7 +264,7 @@ protected:
     void emitFinished();
 };
 
-// QS3GetObjectResponse
+/// QS3GetObjectResponse
 
 class QTS3SHARED_EXPORT QS3GetObjectResponse : public QS3Response
 {
@@ -269,7 +291,7 @@ protected:
     void emitFinished();
 };
 
-// QS3PutObjectResponse
+/// QS3PutObjectResponse
 
 class QTS3SHARED_EXPORT QS3PutObjectResponse : public QS3Response
 {
@@ -295,7 +317,7 @@ protected:
     void emitFinished();
 };
 
-// QS3AclResponse
+/// QS3AclResponse
 
 class QTS3SHARED_EXPORT QS3GetAclResponse : public QS3Response
 {
@@ -315,7 +337,7 @@ protected:
     void emitFinished();
 };
 
-// QS3SetAclResponse
+/// QS3SetAclResponse
 
 class QTS3SHARED_EXPORT QS3SetAclResponse : public QS3Response
 {

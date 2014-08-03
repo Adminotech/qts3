@@ -1,5 +1,6 @@
 
 #include "QS3Defines.h"
+#include <QDebug>
 
 // QS3Config
 
@@ -177,6 +178,25 @@ QS3AclPermissions *QS3Acl::getPermissionByUsername(const QString &username)
 QString QS3Acl::toString() const
 {
     return QString("key=%1 ownerName=%2 ownerId[0:7]=%3").arg(key).arg(ownerName).arg(ownerId.left(7));
+}
+
+// QS3Error
+
+bool QS3Error::isEmpty() const
+{
+	return (error.isEmpty() && code.isEmpty() && message.isEmpty());
+}
+
+QString QS3Error::toString() const
+{
+	// Internal or Qt network error but no S3 error.
+	if (!error.isEmpty() && code.isEmpty() && message.isEmpty())
+		return error;
+	// S3 error present, only print it.
+	else if (code.isEmpty() && message.isEmpty())
+		return QString("Code: %1 Message: %2").arg(code).arg(message);
+	// Print everything we have.
+	return QString("%1 Code: %2 Message: %3").arg(error).arg(code).arg(message);
 }
 
 // QS3Response

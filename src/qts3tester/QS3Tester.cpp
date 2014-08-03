@@ -90,7 +90,7 @@ void QS3Tester::OnRemoveObjectRespose(QS3RemoveObjectResponse *response)
     qDebug() << "[QS3Tester]: DELETE completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
     qDebug() << "[QS3Tester]: Succeeded :" << response->succeeded;
     if (!response->succeeded)
-        qDebug() << "[QS3Tester]: Error     :" << response->error;
+		qDebug() << "[QS3Tester]: Error     :" << response->error.toString();
 }
 
 void QS3Tester::OnCopyObjectRespose(QS3CopyObjectResponse *response)
@@ -98,7 +98,7 @@ void QS3Tester::OnCopyObjectRespose(QS3CopyObjectResponse *response)
     qDebug() << "[QS3Tester]: COPY completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
     qDebug() << "[QS3Tester]: Succeeded :" << response->succeeded;
     if (!response->succeeded)
-        qDebug() << "[QS3Tester]: Error     :" << response->error;
+        qDebug() << "[QS3Tester]: Error     :" << response->error.toString();
 }
 
 void QS3Tester::OnGetObjectRespose(QS3GetObjectResponse *response)
@@ -106,7 +106,7 @@ void QS3Tester::OnGetObjectRespose(QS3GetObjectResponse *response)
     qDebug() << "[QS3Tester]: GET completed" << response->url.toString(QUrl::RemoveQuery).toStdString().c_str() << QString("size=%1").arg(response->data.size()).toStdString().c_str();
     qDebug() << "[QS3Tester]: Succeeded :" << response->succeeded;
     if (!response->succeeded)
-        qDebug() << "[QS3Tester]: Error     :" << response->error;
+        qDebug() << "[QS3Tester]: Error     :" << response->error.toString();
 }
 
 void QS3Tester::OnPutObjectRespose(QS3PutObjectResponse *response)
@@ -114,7 +114,7 @@ void QS3Tester::OnPutObjectRespose(QS3PutObjectResponse *response)
     qDebug() << "[QS3Tester]: PUT completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
     qDebug() << "[QS3Tester]: Succeeded :" << response->succeeded;
     if (!response->succeeded)
-        qDebug() << "[QS3Tester]: Error     :" << response->error;
+        qDebug() << "[QS3Tester]: Error     :" << response->error.toString();
 }
 
 void QS3Tester::OnAclGetRespose(QS3GetAclResponse *response)
@@ -131,7 +131,7 @@ void QS3Tester::OnAclGetRespose(QS3GetAclResponse *response)
             qDebug() << "[QS3Tester]:  User:        :" << permissions.toString();
     }
     else    
-        qDebug() << "[QS3Tester]: Error     :" << response->error;
+        qDebug() << "[QS3Tester]: Error     :" << response->error.toString();
 }
 
 void QS3Tester::OnAclSetRespose(QS3SetAclResponse *response)
@@ -139,7 +139,7 @@ void QS3Tester::OnAclSetRespose(QS3SetAclResponse *response)
     qDebug() << "[QS3Tester]: ACL set completed " << response->url.toString(QUrl::RemoveQuery).toStdString().c_str();
     qDebug() << "[QS3Tester]: Succeeded :" << response->succeeded;
     if (!response->succeeded)
-        qDebug() << "[QS3Tester]: Error     :" << response->error;
+        qDebug() << "[QS3Tester]: Error     :" << response->error.toString();
 }
 
 void QS3Tester::OnFailed(QS3Response *response, const QString &message)

@@ -9,6 +9,35 @@
 
 namespace QS3Xml
 {
+	bool parseError(QS3Error &dest, const QByteArray &data, QString &errorMessage)
+	{
+		QDomDocument doc;
+        if (!doc.setContent(data, &errorMessage))
+            return false;
+
+        // <Error>
+        QDomElement root = doc.documentElement();
+		if (root.isNull() || root.nodeName() != NODE_NAME_ERROR)
+        {
+            errorMessage = "Failed to get document root <Error> element. XML response was invalid.";
+            return false;
+        }
+
+		QDomElement e = root.firstChildElement(NODE_NAME_CODE);
+		if (!e.isNull())
+			dest.code = e.text();
+		e = root.firstChildElement(NODE_NAME_MESSAGE);
+		if (!e.isNull())
+			dest.message = e.text();
+		e = root.firstChildElement(NODE_NAME_RESOURCE);
+		if (!e.isNull())
+			dest.resource = e.text();
+		e = root.firstChildElement(NODE_NAME_REQUEST_ID);
+		if (!e.isNull())
+			dest.requestId = e.text();
+		return true;
+	}
+
     bool parseListObjects(QS3ListObjectsResponse *response, const QByteArray &data, QString &errorMessage)
     {
         QDomDocument doc;

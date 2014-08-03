@@ -5,6 +5,7 @@
 
 class QS3Client;
 class QS3Config;
+class QS3Error;
 class QS3Object;
 class QS3Response;
 class QS3ListObjectsResponse;

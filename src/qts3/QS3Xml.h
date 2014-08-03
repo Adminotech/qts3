@@ -8,6 +8,7 @@
 
 namespace QS3Xml
 {
+	bool parseError(QS3Error &dest, const QByteArray &data, QString &errorMessage);
     bool parseListObjects(QS3ListObjectsResponse *response, const QByteArray &data, QString &errorMessage);
     bool parseAclObjects(QS3GetAclResponse *response, const QByteArray &data, QString &errorMessage);
 
@@ -27,6 +28,12 @@ namespace QS3Xml
     static QString NODE_NAME_GRANTEE        = "Grantee";
     static QString NODE_NAME_PERMISSION     = "Permission";
     static QString NODE_NAME_URI            = "URI";
+
+	static QString NODE_NAME_ERROR          = "Error";
+	static QString NODE_NAME_CODE           = "Code";
+	static QString NODE_NAME_MESSAGE        = "Message";
+	static QString NODE_NAME_RESOURCE       = "Resource";
+	static QString NODE_NAME_REQUEST_ID     = "RequestId";
 
     static QString GRANTEE_TYPE_USER        = "CanonicalUser";
     static QString GRANTEE_TYPE_GROUP       = "Group";
